@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>ACIL Backward Linkage Project</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" crossorigin="anonymous"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue:#1c4587;--blue2:#2e75b6;--blue-l:#e8f0fe;
+  --green:#1e7e34;--green-l:#e8f5e9;
+  --red:#c0392b;--red-l:#fdecea;
+  --amber:#e67e22;--amber-l:#fff3cd;
+  --purple:#6b21a8;--purple-l:#f3e8ff;
+  --teal:#0891b2;--teal-l:#e0f2fe;
+  --gray:#f0f4f8;--border:#dde3ec;
+  --text:#1a1a1a;--text2:#555;--text3:#888;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--gray);min-height:100vh;color:var(--text);-webkit-text-size-adjust:100%}
+
+.splash{
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;
+  background:linear-gradient(145deg,#0a2340,#1c4587,#2e75b6);user-select:none;-webkit-user-select:none;
+}
+.splash-logo{width:80px;height:80px;border-radius:16px;object-fit:contain;background:#fff;padding:6px;margin-bottom:12px;box-shadow:0 4px 20px rgba(0,0,0,.3)}
+.splash h1{font-size:20px;font-weight:800;color:#fff;text-align:center;margin-bottom:4px}
+.splash h2{font-size:13px;color:rgba(255,255,255,.7);text-align:center;margin-bottom:6px}
+.powered{font-size:11px;color:rgba(255,255,255,.5);margin-bottom:2rem;text-align:center}
+.pt-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%;max-width:380px}
+
+.pt-card{
+  background:rgba(255,255,255,.95);border-radius:18px;padding:1.75rem 1rem;text-align:center;cursor:pointer;
+  box-shadow:0 4px 24px rgba(0,0,0,.2);transition:transform .1s,background-color .1s;-webkit-tap-highlight-color:transparent;
+}
+.pt-card:active{transform:scale(.96);background:#f0f4f8;}
+.pt-icon,.pt-name,.pt-sub{pointer-events:none}
+.pt-icon{font-size:44px;margin-bottom:8px}
+.pt-name{font-size:15px;font-weight:700;color:var(--blue)}
+.pt-sub{font-size:10px;color:var(--text3);margin-top:3px;line-height:1.4}
+
+.login-wrap{min-height:100vh;display:none;align-items:center;justify-content:center;padding:1rem;background:linear-gradient(145deg,#0a2340,#1c4587,#2e75b6);flex-direction:column;width:100%}
+.back-btn{background:none;border:none;color:rgba(255,255,255,.8);font-size:13px;cursor:pointer;margin-bottom:1rem;display:flex;align-items:center;gap:4px;padding:10px}
+.login-box{background:#fff;border-radius:20px;padding:2rem 1.5rem;width:100%;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,.25)}
+.login-logo-row{display:flex;align-items:center;gap:12px;margin-bottom:1.25rem}
+.login-logo-img{width:48px;height:48px;border-radius:10px;object-fit:contain;background:var(--blue-l);padding:4px}
+.login-logo-text h2{font-size:15px;font-weight:700;color:var(--blue);margin:0}
+.login-logo-text p{font-size:11px;color:var(--text3);margin:2px 0 0}
+.role-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.rtab{padding:12px;border:2px solid var(--border);border-radius:10px;font-size:13px;font-weight:600;color:var(--text3);cursor:pointer;text-align:center;background:#f8fafc;user-select:none}
+.rtab.active{border-color:var(--blue);color:var(--blue);background:var(--blue-l)}
+.flbl{font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:5px}
+.finp{width:100%;font-size:16px;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;background:#f8fafc;color:var(--text);margin-bottom:12px;-webkit-appearance:none}
+.login-btn{width:100%;padding:14px;font-size:15px;font-weight:700;background:var(--blue);color:#fff;border:none;border-radius:10px;cursor:pointer}
+.login-err{background:var(--red-l);color:var(--red);font-size:13px;padding:9px 12px;border-radius:8px;margin-top:10px;text-align:center;display:none}
+
+.app-wrap{display:none}
+.header{background:linear-gradient(135deg,#0a2340,var(--blue));color:#fff;padding:.75rem 1rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.hdr-l{display:flex;align-items:center;gap:8px}
+.hdr-logo{width:32px;height:32px;border-radius:8px;object-fit:contain;background:#fff;padding:2px}
+.hdr-title{font-size:13px;font-weight:700;margin:0;line-height:1.2}
+.hdr-sub{font-size:10px;opacity:.7;margin:0}
+.badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px}
+.b-admin{background:var(--purple);color:#fff}
+.b-staff{background:var(--teal);color:#fff}
+.logout-btn{background:rgba(255,255,255,.15);border:none;color:#fff;font-size:11px;padding:6px 10px;border-radius:8px;cursor:pointer}
+
+.bnav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);display:flex;z-index:90;box-shadow:0 -2px 10px rgba(0,0,0,.08);overflow-x:auto}
+.bnav-btn{flex:1;min-width:65px;padding:10px 2px 8px;border:none;background:transparent;font-size:10px;font-weight:600;color:var(--text3);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
+.bnav-btn .bi{font-size:18px}
+.bnav-btn.active{color:var(--blue)}
+.content{padding:1rem 1rem 100px;max-width:540px;margin:0 auto}
+
+.card{background:#fff;border-radius:14px;padding:1.25rem;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.card-title{font-size:13px;font-weight:700;color:var(--blue);margin-bottom:1rem;display:flex;align-items:center;gap:6px;padding-bottom:8px;border-bottom:1.5px solid var(--gray)}
+
+.flbl2{font-size:12px;font-weight:600;color:var(--text2);margin-bottom:4px;display:flex;align-items:center;gap:5px;margin-top:2px}
+input[type=date],input[type=number],input[type=text],input[type=password],select.sel{width:100%;font-size:15px;padding:12px;border:1.5px solid var(--border);border-radius:10px;background:#f8fafc;color:var(--text);margin-bottom:10px;appearance:none;-webkit-appearance:none;font-family:inherit}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+.proj-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px}
+.proj-btn{padding:12px 8px;border:2px solid var(--border);border-radius:12px;font-size:13px;font-weight:700;color:var(--text2);cursor:pointer;text-align:center;background:#f8fafc}
+.proj-btn.sel{border-color:var(--blue);background:var(--blue-l);color:var(--blue)}
+
+.stock-table,.rep-table,.issue-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:10px}
+.stock-table th,.rep-table th,.issue-table th{background:var(--blue);color:#fff;padding:8px;text-align:left;font-size:11px;font-weight:600}
+.stock-table td,.rep-table td,.issue-table td{padding:8px;border-bottom:1px solid var(--gray);vertical-align:middle}
+.stock-table .tot,.rep-table .tot-row td{font-weight:700;background:var(--blue-l);color:var(--blue)}
+
+.issue-table input{margin-bottom:0;padding:6px;font-size:13px;width:80px}
+.issue-table select{margin-bottom:0;padding:6px;font-size:12px;width:90px}
+
+.btn{width:100%;padding:13px;font-size:14px;font-weight:600;border:none;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;margin-bottom:8px}
+.btn:active{opacity:.85}
+.btn-blue{background:var(--blue);color:#fff}
+.btn-green{background:var(--green);color:#fff}
+.btn-amber{background:var(--amber);color:#fff}
+.btn-teal{background:var(--teal);color:#fff}
+.btn-red{background:var(--red);color:#fff}
+
+.report-nav{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px}
+.rep-tab{padding:8px 14px;border:1.5px solid var(--border);border-radius:20px;font-size:12px;font-weight:600;color:var(--text3);cursor:pointer;background:#f8fafc}
+.rep-tab.active{border-color:var(--blue);background:var(--blue);color:#fff}
+
+.toast{position:fixed;bottom:76px;left:50%;transform:translateX(-50%);padding:10px 18px;border-radius:25px;font-size:13px;font-weight:600;color:#fff;z-index:999;display:none;box-shadow:0 4px 16px rgba(0,0,0,.2);max-width:88vw}
+.toast.ok{background:var(--green)}
+</style>
+</head>
+<body>
+
+<div class="splash" id="splash">
+  <img class="splash-logo" src="https://d2t8nl1y0ie1km.cloudfront.net/public/images/shwapno_logo_og.jpg" alt="ACIL Logo">
+  <h1>ACIL Backward Linkage Project</h1>
+  <h2>Integrated Farm Management System</h2>
+  <p class="powered">Powered By Md Shohidul Islam Rubel</p>
+  <div class="pt-grid">
+    <div class="pt-card" onclick="handleProjectSelection('fish')">
+      <div class="pt-icon">🐟</div>
+      <div class="pt-name">Fish Project</div>
+      <div class="pt-sub">Logistics · Movement Control<br>Pond Analysis Engine</div>
+    </div>
+    <div class="pt-card" onclick="handleProjectSelection('veg')">
+      <div class="pt-icon">🥬</div>
+      <div class="pt-name">Veg Project</div>
+      <div class="pt-sub">Ledger Cost Booking<br>Financial Metrics Analytics</div>
+    </div>
+  </div>
+</div>
+
+<div class="login-wrap" id="login-screen">
+  <button class="back-btn" onclick="goBack()">← Go Back</button>
+  <div class="login-box">
+    <div class="login-logo-row">
+      <img class="login-logo-img" src="https://d2t8nl1y0ie1km.cloudfront.net/public/images/shwapno_logo_og.jpg" alt="Logo">
+      <div class="login-logo-text">
+        <h2>ACIL Backward Linkage</h2>
+        <p id="login-sub">Security Access Gateway</p>
+      </div>
+    </div>
+    <div class="role-tabs">
+      <div class="rtab active" id="rtab-staff" onclick="setRole('staff')">👷 Field Staff</div>
+      <div class="rtab" id="rtab-admin" onclick="setRole('admin')">🔐 Admin</div>
+    </div>
+    <label class="flbl">Username</label>
+    <input class="finp" type="text" id="login-user" placeholder="Enter username">
+    <label class="flbl">Gateway Password</label>
+    <input class="finp" type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" onclick="doLogin()">Authenticate Profile →</button>
+    <div class="login-err" id="login-err">Invalid security credentials mapping.</div>
+  </div>
+</div>
+
+<div class="app-wrap" id="app-wrap">
+  <div class="header">
+    <div class="hdr-l">
+      <img class="hdr-logo" src="https://d2t8nl1y0ie1km.cloudfront.net/public/images/shwapno_logo_og.jpg" alt="Logo">
+      <div>
+        <p class="hdr-title">ACIL Backward Linkage</p>
+        <p class="hdr-sub" id="hdr-sub">IFMS Interface Engine</p>
+      </div>
+    </div>
+    <div class="hdr-r">
+      <span class="badge" id="role-badge"></span>
+      <button class="logout-btn" onclick="logout()">Terminate</button>
+    </div>
+  </div>
+  <div class="content" id="main-content"></div>
+  <div class="bnav" id="bottom-nav"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var API = 'https://script.google.com/macros/s/AKfycbzWSefAo-2fHefsDlwequURtDQYuU9beRHwOoes_fiNUTLLgtM0NXiZZslXuBJlTaE4/exec';
+var USERS={
+  admin:     {pw:'Admin@2024', role:'admin', access:'all'},
+  fishstaff: {pw:'Fish@2024',  role:'staff', access:'fish'},
+  vegstaff:  {pw:'Veg@2024',   role:'staff', access:'veg'}
+};
+var FISH_PROJ={Mohonpur:3,Durgapur:4};
+var VEG_PROJ={VegProject:1};
+var CORE_UOMS=['Kg','Ltr','Gm','Ml','Pcs','Each','Doz','Box','Bottle','Pack','Bag','User-Defined'];
+
+var FISH_HEADS=['Lease Value','Fingerling Cost','Feed Cost','Labor Cost','Pond Management','Medicine Cost','Electricity & Water Supply','Transport Cost','Shed Cost','Harvesting Cost','Maintenance & Others Cost'];
+var VEG_HEADS=['Land Lease Cost','Land Preparation Labor Cost','Fertilizer & Pesticide Expense','Seeds Cost','Electricity & Water Supply','Plant Protection Cost','Packaging & Transportation Cost','Maintenance & Others Cost','Wages Cost'];
+
+var S={pt:null,role:null,user:null,selRole:'staff',tab:null,proj:'Mohonpur',recs:[],period:'30D',customFrom:'',customTo:'',repTab:'costhead'};
+
+function today(){return new Date().toISOString().split('T')[0];}
+function fmt(n){return Number(n||0).toLocaleString();}
+function tk(n){return '৳'+fmt(n);}
+function toast(msg){var t=qs('toast');t.textContent=msg;t.className='toast ok';t.style.display='block';setTimeout(function(){t.style.display='none';},3000);}
+function qs(id){return document.getElementById(id);}
+
+function handleProjectSelection(selectedType) {
+  S.pt = selectedType;
+  S.proj = (selectedType === 'fish' ? 'Mohonpur' : 'VegProject');
+  S.repTab = 'costhead';
+  qs('login-sub').textContent = selectedType === 'fish' ? 'Fish Operation Track' : 'Veg Venture Track';
+  qs('splash').style.display = 'none';
+  qs('login-screen').style.display = 'flex';
+}
+
+function goBack(){qs('login-screen').style.display='none';qs('splash').style.display='flex';S.pt=null;}
+function setRole(r){S.selRole=r;qs('rtab-admin').className='rtab'+(r==='admin'?' active':'');qs('rtab-staff').className='rtab'+(r==='staff'?' active':'');}
+
+function doLogin(){
+  var u=qs('login-user').value.trim().toLowerCase();var p=qs('login-pass').value;var err=qs('login-err');
+  var usr={admin:true,fishstaff:true,vegstaff:true}[u]?USERS[u]:null;
+  if(!usr||usr.pw!==p||usr.role!==S.selRole){err.style.display='block';return;}
+  if(usr.access!=='all'&&usr.access!==S.pt){err.style.display='block';err.textContent='Access Blocked for this workspace.';return;}
+  S.role=usr.role;S.user=u;err.style.display='none';
+  qs('login-screen').style.display='none';initApp();
+}
+
+function logout(){
+  S={pt:null,role:null,user:null,selRole:'staff',tab:null,proj:'Mohonpur',recs:[],period:'30D',customFrom:'',customTo:'',repTab:'costhead'};
+  qs('app-wrap').style.display='none';qs('splash').style.display='flex';
+}
+
+function initApp(){
+  qs('app-wrap').style.display='block';
+  qs('hdr-sub').textContent=(S.pt==='fish'?'Fish Operation':'Veg Operation')+' Core Engine';
+  qs('role-badge').className='badge '+(S.role==='admin'?'b-admin':'b-staff');
+  qs('role-badge').textContent=S.role==='admin'?'👑 Admin':'👷 Staff';
+  buildNav();
+  fetchAll(); 
+}
+
+function buildNav(){
+  var nav=qs('bottom-nav');
+  var tabs=S.pt==='fish'
+    ? [{id:'stock',icon:'🐠',l:'Fish Stock'},{id:'mort',icon:'☠️',l:'Mortality'},{id:'feed',icon:'🌾',l:'Feeding'},{id:'medtab',icon:'💊',l:'Medicine'},{id:'cost',icon:'💰',l:'Cost'},{id:'reports',icon:'📊',l:'Reports'}]
+    :[{id:'cost',icon:'💰',l:'Cost Booking'},{id:'reports',icon:'📊',l:'Reports'}];
+  nav.innerHTML=tabs.map(function(t){return'<button class="bnav-btn" id="bnav-'+t.id+'" onclick="showTab(\''+t.id+'\')"><span class="bi">'+t.icon+'</span>'+t.l+'</button>';}).join('');
+  showTab(tabs[0].id);
+}
+
+function showTab(tab){
+  S.tab=tab;document.querySelectorAll('.bnav-btn').forEach(function(b){b.className='bnav-btn';});
+  var el=qs('bnav-'+tab);if(el)el.className='bnav-btn active';
+  var c=qs('main-content');
+  if(tab=='stock')c.innerHTML=tplStock();
+  else if(tab=='mort')c.innerHTML=tplMort();
+  else if(tab=='feed')c.innerHTML=tplFeed();
+  else if(tab=='medtab')c.innerHTML=tplMed();
+  else if(tab=='cost')c.innerHTML=tplCost();
+  else if(tab=='reports')c.innerHTML=tplReports();
+  if(tab=='reports')renderReports();
+  if(tab=='stock')renderStockTable();
+  if(tab=='medtab')renderMedicineStock();
+  if(tab=='feed')rebuildPondIssueGrid();
+}
+
+function fetchAll(){
+  fetch(API+'?action=getAll&pt='+S.pt)
+    .then(function(r){return r.json();})
+    .then(function(d){
+      S.recs=d.rows||[];
+      if(S.tab=='reports')renderReports();
+      if(S.tab=='stock')renderStockTable();
+      if(S.tab=='medtab')renderMedicineStock();
+    })
+    .catch(function(){});
+}
+
+function post(data,cb){
+  fetch(API,{method:'POST',body:JSON.stringify(data)}).then(function(r){return r.json();}).then(cb).catch(function(){alert('Network synchronization validation failed.');});
+}
+
+function projBtns(pfx){
+  var list = S.pt==='fish'?Object.keys(FISH_PROJ):Object.keys(VEG_PROJ);
+  return '<div class="proj-grid">'+list.map(function(p){
+    return'<div class="proj-btn'+(p===S.proj?' sel':'')+'" onclick="selProj(\''+p+'\')">'+p+'</div>';
+  }).join('')+'</div>';
+}
+function selProj(p){S.proj=p;showTab(S.tab);}
+
+function getPondOptions(){
+  if(S.pt!=='fish')return '<option value="Project-Wide">Project-Wide</option>';
+  var n=FISH_PROJ[S.proj]||3;var h='';for(var i=1;i<=n;i++)h+='<option value="'+i+'">Pond Zone Unit '+i+'</option>';return h;
+}
+function getPondOptionsWithGlobal(){
+  var h = '<option value="Overall Project">⭐ Overall Project Head</option>';
+  if(S.pt==='fish'){var n=FISH_PROJ[S.proj]||3;for(var i=1;i<=n;i++)h+='<option value="'+i+'">Pond Zone Unit '+i+'</option>';}
+  return h;
+}
+function getUomOptions(){return CORE_UOMS.map(function(u){return '<option value="'+u+'">'+u+'</option>';}).join('');}
+
+function getFishStockDetails(proj,pond,ftype){
+  var stk=0;
+  S.recs.filter(function(r){return r.project===proj;}).forEach(function(r){
+    var cleanFish = (r.fishType||'').trim().toLowerCase();
+    var targetFish = ftype.trim().toLowerCase();
+    if(cleanFish === targetFish){
+      if(r.type==='fishstock' && r.pond==pond) stk += (+r.qty||0);
+      if(r.type==='mortality' && r.pond==pond) stk -= (+r.qty||0);
+      if(r.type==='transfer'){
+        if(r.fromPond == pond) stk -= (+r.qty||0);
+        if(r.toPond == pond) stk += (+r.qty||0);
+      }
+    }
+  });
+  return Math.max(0,stk);
+}
+
+function getPeriodDates(){
+  var fromDate = qs('rep-from') ? qs('rep-from').value : '2026-01-01';
+  var toDate = qs('rep-to') ? qs('rep-to').value : today();
+  return {from:fromDate, to:toDate};
+}
+function inPeriod(date){
+  var pd=getPeriodDates();if(pd.from&&date<pd.from)return false;if(pd.to&&date>pd.to)return false;return true;
+}
+
+// 🐠 FISH STOCK MODULE
+function tplStock(){
+  return '<div class="card"><div class="card-title">📍 Step 1: Select Active Target Project</div>'+projBtns('st')+'</div>'
+  +'<div class="card"><div class="card-title">📋 Active Live Balance Registry</div>'
+  +'<label class="flbl2">Select Pond Unit Focus</label><select class="sel" id="reg-pond-view" onchange="renderStockTable()">'+getPondOptions()+'</select>'
+  +'<div id="stock-table-box"></div></div>'
+  +'<div class="card"><div class="card-title">🐟 Initial Stock / Fingerling Logging</div>'
+  +'<div class="two-col"><div><label class="flbl2">Log Date</label><input type="date" id="st-date" value="'+today()+'"></div>'
+  +'<div><label class="flbl2">Allocation Pond</label><select class="sel" id="st-pond">'+getPondOptions()+'</select></div></div>'
+  +'<div class="two-col"><div><label class="flbl2">Fish Type (User-Defined) <span style="color:var(--red)">*</span></label><input type="text" id="st-ftype" placeholder="e.g. Rui, Pangash, Tilapia"></div>'
+  +'<div><label class="flbl2">Count Qty</label><input type="number" id="st-qty" placeholder="Units"></div></div>'
+  +'<label class="flbl2">Avg Weight (kg)</label><input type="number" id="st-weight" placeholder="0.20" step="0.01">'
+  +'<button class="btn btn-blue" onclick="saveInitialStock()">Append Primary Stock</button></div>'
+  +'<div class="card"><div class="card-title">🔄 Cross Pond Livestock Relocation (Internal)</div>'
+  +'<div class="two-col"><div><label class="flbl2">Source Pond</label><select class="sel" id="tr-from">'+getPondOptions()+'</select></div>'
+  +'<div><label class="flbl2">Destination Pond</label><select class="sel" id="tr-to">'+getPondOptions()+'</select></div></div>'
+  +'<div class="two-col"><div><label class="flbl2">Fish Type (User-Defined) <span style="color:var(--red)">*</span></label><input type="text" id="tr-ftype" placeholder="e.g. Rui"></div>'
+  +'<div><label class="flbl2">Relocation Qty</label><input type="number" id="tr-qty" placeholder="Units"></div></div>'
+  +'<button class="btn btn-teal" onclick="saveTransfer()">Execute Internal Relocation</button></div>';
+}
+function renderStockTable(){
+  var b=qs('stock-table-box');if(!b)return;var targetPond=qs('reg-pond-view').value;
+  var trackTypes=[];
+  S.recs.forEach(function(r){if(r.project===S.proj && r.fishType){var f=r.fishType.trim();if(trackTypes.indexOf(f)===-1)trackTypes.push(f);}});
+  if(trackTypes.length===0){trackTypes=['Rui','Katla','Tilapia'];}
+  
+  var h='<table class="stock-table"><thead><tr><th>Fish Varietal Type</th><th>Current Available Qty</th></tr></thead><tbody>';var tot=0;
+  trackTypes.forEach(function(ft){var s=getFishStockDetails(S.proj,targetPond,ft);tot+=s;h+='<tr><td><b>'+ft+'</b></td><td>'+fmt(s)+' Head Units</td></tr>';});
+  h+='<tr class="tot"><td>Aggregated Livestock</td><td>'+fmt(tot)+' Units</td></tr></tbody></table>';b.innerHTML=h;
+}
+function saveInitialStock(){
+  var ft=qs('st-ftype').value.trim();var qty=qs('st-qty').value;
+  if(!ft||!qty){alert('Fish Type and Quantity elements are mandatory.');return;}
+  var data={action:'save',type:'fishstock',project:S.proj,date:qs('st-date').value,pond:qs('st-pond').value,fishType:ft,qty:qty,weight:qs('st-weight').value};
+  post(data,function(){toast('Primary balance logs parsed.');fetchAll();qs('st-qty').value='';});
+}
+function saveTransfer(){
+  var fromP=qs('tr-from').value,toP=qs('tr-to').value,qty=qs('tr-qty').value,ft=qs('tr-ftype').value.trim();
+  if(fromP===toP){alert('Source and destination ponds must be distinct.');return;}
+  if(!ft||!qty||+qty<=0){alert('Provide validated relocation parameters.');return;}
+  var data={action:'save',type:'transfer',project:S.proj,date:today(),fromPond:fromP,toPond:toP,fishType:ft,qty:qty};
+  post(data,function(){toast('Internal relocation synchronized.');fetchAll();qs('tr-qty').value='';});
+}
+
+// ☠️ MORTALITY MODULE
+function tplMort(){
+  return '<div class="card"><div class="card-title">📍 Step 1: Select Working Project Area</div>'+projBtns('mo')+'</div>'
+  +'<div class="card"><div class="card-title">☠️ Register Attrition Event Metric</div>'
+  +'<label class="flbl2">Event Timestamp Date</label><input type="date" id="mo-date" value="'+today()+'">'
+  +'<div class="two-col"><div><label class="flbl2">Affected Pond Location</label><select class="sel" id="mo-pond">'+getPondOptions()+'</select></div>'
+  +'<div><label class="flbl2">Fish Type (User-Defined) <span style="color:var(--red)">*</span></label><input type="text" id="mo-ftype" placeholder="e.g. Rui"></div></div>'
+  +'<div class="two-col"><div><label class="flbl2">Loss Attrition Qty</label><input type="number" id="mo-qty" placeholder="Units"></div>'
+  +'<div><label class="flbl2">Biomass Weight (kg)</label><input type="number" id="mo-weight" placeholder="Optional" step="0.01"></div></div>'
+  +'<label class="flbl2">Reason for Mortality <span style="color:var(--red)">*</span></label><input type="text" id="mo-reason" placeholder="e.g. Oxygen depletion, Disease outbreak">'
+  +'<button class="btn btn-red" onclick="saveMortality()">Execute Mortality Updates</button></div>';
+}
+function saveMortality(){
+  var q=qs('mo-qty').value;var ft=qs('mo-ftype').value.trim();var re=qs('mo-reason').value.trim();
+  if(!q||!ft||!re){alert('All asterisk indicated field values are verified required entries.');return;}
+  var data={action:'save',type:'mortality',project:S.proj,date:qs('mo-date').value,pond:qs('mo-pond').value,fishType:ft,qty:q,weight:qs('mo-weight').value||'',reason:re};
+  post(data,function(){toast('Livestock structural depletion note recorded.');fetchAll();qs('mo-qty').value='';qs('mo-reason').value='';});
+}
+
+// 🌾 FEED MODULE
+function tplFeed(){
+  return '<div class="card"><div class="card-title">📍 Step 1: Select Working Project Area</div>'+projBtns('fe')+'</div>'
+  
+  +'<div class="card"><div class="card-title">🛒 1. Feed Purchasing / Inward Stock Entry</div>'
+  +'<div class="two-col"><div><label class="flbl2">Purchase Date</label><input type="date" id="pur-date" value="'+today()+'"></div>'
+  +'<div><label class="flbl2">Party / Supplier Name <span style="color:var(--red)">*</span></label><input type="text" id="pur-supplier" placeholder="Party Name"></div></div>'
+  +'<label class="flbl2">Feed Name (Type or Select)</label>'
+  +'<input type="text" id="pur-brand" list="feed-defaults" placeholder="e.g. Carp Grower Floating">'
+  +'<datalist id="feed-defaults"><option value="Carp Grower Floating"><option value="Carp Grower Sinking"><option value="Mixed Feed"></datalist>'
+  +'<div class="two-col"><div><label class="flbl2">Bags Quantity Purchased <span style="color:var(--red)">*</span></label><input type="number" id="pur-bags" value="0" oninput="calculatePurKg()"></div>'
+  +'<div><label class="flbl2">Total Mass Calculated (Kg)</label><input type="number" id="pur-kg" value="0" readonly style="background:#e8f0fe;font-weight:700;color:var(--blue)"></div></div>'
+  +'<button class="btn btn-blue" onclick="savePurchaseFeed()">Save Purchase Entry</button></div>'
+
+  +'<div class="card"><div class="card-title">🌊 2. Multi-Pond Daily Feed Issuing Engine</div>'
+  +'<div class="two-col"><div><label class="flbl2">Issue Date</label><input type="date" id="iss-date" value="'+today()+'"></div>'
+  +'<div><label class="flbl2">Select Feed Variety</label><input type="text" id="iss-brand" list="feed-defaults" placeholder="e.g. Carp Grower Floating"></div></div>'
+  +'<div id="multi-pond-grid-box"></div>'
+  +'<div style="background:var(--blue-l);padding:12px;border-radius:10px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">'
+  +'  <span style="font-size:13px;font-weight:700;color:var(--blue)">Aggregated Multi-Pond Issue Total:</span>'
+  +'  <span id="lbl-total-issued-today" style="font-size:16px;font-weight:800;color:var(--blue)">0.00 Kg</span>'
+  +'</div>'
+  +'<button class="btn btn-green" onclick="saveMultiPondIssues()">Post All Pond Expenses Together</button></div>';
+}
+
+function calculatePurKg(){
+  var bags = +qs('pur-bags').value||0;
+  qs('pur-kg').value = bags * 25;
+}
+
+function rebuildPondIssueGrid(){
+  var box = qs('multi-pond-grid-box'); if(!box) return;
+  var n = FISH_PROJ[S.proj]||3;
+  
+  var h = '<table class="issue-table"><thead><tr><th>Structural Target</th><th>Qty to Issue</th><th>UOM Metric</th></tr></thead><tbody>';
+  for(var i=1; i<=n; i++){
+    h += '<tr>'
+      + '  <td><b>Pond Unit '+i+'</b></td>'
+      + '  <td><input type="number" class="grid-qty-input" data-pond="'+i+'" value="0" step="0.01" oninput="calculateGridTotalSum()"></td>'
+      + '  <td>'
+      + '    <select class="grid-uom-select" data-pond="'+i+'" onchange="calculateGridTotalSum()">'
+      + '      <option value="Kg">Kg</option>'
+      + '      <option value="Bag">Bag</option>'
+      + '    </select>'
+      + '  </td>'
+      + '</tr>';
+  }
+  h += '</tbody></table>';
+  box.innerHTML = h;
+  calculateGridTotalSum();
+}
+
+function calculateGridTotalSum(){
+  var totalKg = 0;
+  var rows = document.querySelectorAll('.grid-qty-input');
+  rows.forEach(function(input){
+    var pondNum = input.getAttribute('data-pond');
+    var val = +input.value||0;
+    var uom = document.querySelector('.grid-uom-select[data-pond="'+pondNum+'"]').value;
+    
+    if(uom.toLowerCase() === 'bag') {
+      totalKg += (val * 25);
+    } else {
+      totalKg += val; 
+    }
+  });
+  qs('lbl-total-issued-today').textContent = totalKg.toFixed(2) + ' Kg';
+}
+
+function savePurchaseFeed(){
+  var sup = qs('pur-supplier').value.trim();
+  var brand = qs('pur-brand').value.trim();
+  var bags = +qs('pur-bags').value||0;
+  var kg = +qs('pur-kg').value||0;
+  
+  if(!sup || !brand || bags <= 0){
+    alert('Supplier Name, Feed Designation, and positive bag metrics are mandatory properties.');
+    return;
+  }
+  
+  var data = {
+    action: 'save', type: 'feed', project: S.proj, date: qs('pur-date').value,
+    supplier: sup, feedType: brand, purQty: bags, issQty: 0, purKg: kg, issKg: 0, pond: 'Inventory Store'
+  };
+  
+  post(data, function(){
+    toast('Inward Purchase Logistics saved.');
+    fetchAll();
+    qs('pur-supplier').value = '';
+    qs('pur-bags').value = '0';
+    qs('pur-kg').value = '0';
+  });
+}
+
+function saveMultiPondIssues(){
+  var brand = qs('iss-brand').value.trim();
+  var dateStr = qs('iss-date').value;
+  if(!brand){ alert('Please select or define the Feed Name before distributing.'); return; }
+  
+  var rows = document.querySelectorAll('.grid-qty-input');
+  var recordsToPost = [];
+  var hasEntries = false;
+
+  rows.forEach(function(input){
+    var pondNum = input.getAttribute('data-pond');
+    var val = +input.value||0;
+    var uom = document.querySelector('.grid-uom-select[data-pond="'+pondNum+'"]').value;
+    
+    if(val > 0) {
+      hasEntries = true;
+      var calcKg = val;
+      if(uom.toLowerCase() === 'bag') calcKg = val * 25;
+      
+      var bagsValue = calcKg / 25;
+
+      recordsToPost.push({
+        action: 'save', type: 'feed', project: S.proj, date: dateStr,
+        supplier: 'Internal Inventory Store', feedType: brand,
+        purQty: 0, issQty: bagsValue, purKg: 0, issKg: calcKg, pond: pondNum
+      });
+    }
+  });
+
+  if(!hasEntries) { alert('Please enter an issue quantity for at least one pond unit.'); return; }
+
+  var doneCount = 0;
+  recordsToPost.forEach(function(rec){
+    post(rec, function(){
+      doneCount++;
+      if(doneCount === recordsToPost.length) {
+        toast('All assigned pond distributions recorded together!');
+        fetchAll();
+        rebuildPondIssueGrid();
+      }
+    });
+  });
+}
+
+// 💊 MEDICINE INTERFACE
+function tplMed(){
+  return '<div class="card"><div class="card-title">📍 Step 1: Select Working Project Area</div>'+projBtns('me')+'</div>'
+  +'<div class="card"><div class="card-title">📋 Project Wise Medicine Available Stock</div><div id="med-stock-box">Processing...</div></div>'
+  +'<div class="card"><div class="card-title">💊 Pharmacy Inventory Voucher Console</div>'
+  +'<label class="flbl2">Voucher Date</label><input type="date" id="me-date" value="'+today()+'">'
+  +'<div class="two-col"><div><label class="flbl2">Classification Class</label><input type="text" id="me-type" placeholder="User Defined Class"></div>'
+  +'<div><label class="flbl2">UOM Selector</label><select class="sel" id="me-uom">'+getUomOptions()+'</select></div></div>'
+  +'<div class="two-col"><div><label class="flbl2">Procured Incoming Qty</label><input type="number" id="me-pur" value="0"></div>'
+  +'<div><label class="flbl2">Outward Distributed Usage</label><input type="number" id="me-iss" value="0"></div></div>'
+  +'<label class="flbl2">Structural Deployment Target</label><select class="sel" id="me-pond">'+getPondOptions()+'</select>'
+  +'<button class="btn btn-green" onclick="saveMed()">Sync Medical Registry</button></div>';
+}
+function renderMedicineStock(){
+  var box=qs('med-stock-box');if(!box)return;
+  var mStock={};
+  S.recs.filter(function(r){return r.type==='medicine'&&r.project===S.proj;}).forEach(function(r){
+    var k=r.medType+' ('+(r.uom||'Units')+')';if(!mStock[k])mStock[k]=0;
+    mStock[k]+=((+r.purQty||0)-(+r.issQty||0));
+  });
+  var h='<table class="rep-table"><thead><tr><th>Medical Item Description Class</th><th>Available Balance Stock</th></tr></thead><tbody>';
+  var keys=Object.keys(mStock);if(keys.length===0)h+='<tr><td colspan="2">No current records indexed.</td></tr>';
+  keys.forEach(function(k){h+='<tr><td>'+k+'</td><td><b>'+fmt(mStock[k])+' Units</b></td></tr>';});
+  box.innerHTML=h+'</tbody></table>';
+}
+function saveMed(){
+  var data={action:'save',type:'medicine',project:S.proj,date:qs('me-date').value,medType:qs('me-type').value||'Medicine',uom:qs('me-uom').value,purQty:qs('me-pur').value,issQty:qs('me-iss').value,pond:qs('me-pond').value};
+  post(data,function(){toast('Pharmacy metrics saved.');fetchAll();showTab('medtab');});
+}
+
+// 💰 COST MANAGEMENT ENGINE
+function tplCost(){
+  var heads=S.pt==='fish'?FISH_HEADS:VEG_HEADS;
+  return '<div class="card"><div class="card-title">📍 Step 1: Select Working Project Area</div>'+projBtns('co')+'</div>'
+  +'<div class="card"><div class="card-title">💰 Operational Expenditure Expense Interface</div>'
+  +'<div class="two-col"><div><label class="flbl2">Processing Date</label><input type="date" id="co-date" value="'+today()+'"></div>'
+  +'<div><label class="flbl2">Category Head</label><select class="sel" id="co-head">'+heads.map(function(h){return'<option value="'+h+'">'+h+'</option>';}).join('')+'</select></div></div>'
+  +'<div class="two-col"><div><label class="flbl2">Particular Description <span style="color:var(--red)">*</span></label><input type="text" id="co-part" placeholder="Mandatory Particular Details"></div>'
+  +'<div><label class="flbl2">UOM Selector</label><select class="sel" id="co-uom">'+getUomOptions()+'</select></div></div>'
+  +'<div class="two-col"><div><label class="flbl2">Quantity Factor</label><input type="number" id="co-qty" value="1" oninput="calculateAutoCostValue()"></div>'
+  +'<div><label class="flbl2">Rate Per Metric (৳)</label><input type="number" id="co-rate" value="0" oninput="calculateAutoCostValue()"></div></div>'
+  +'<label class="flbl2">Target Cost Allocation Structural Unit</label><select class="sel" id="co-pond">'+getPondOptionsWithGlobal()+'</select>'
+  +'<label class="flbl2">Calculated Total (৳)</label><input type="number" id="co-amount" value="0" readonly style="font-weight:700;color:var(--blue);background:#e8f0fe">'
+  +'<button class="btn btn-amber" onclick="saveCost()">Post Financial Balance Record</button></div>';
+}
+function calculateAutoCostValue(){var q=+qs('co-qty').value||0;var r=+qs('co-rate').value||0;qs('co-amount').value=(q*r);}
+function saveCost(){
+  var part=qs('co-part').value.trim();var amt=qs('co-amount').value;if(!part||+amt<=0){alert('Validated description parameters match missing elements.');return;}
+  var data={action:'save',type:'cost',project:S.proj,date:qs('co-date').value,head:qs('co-head').value,particular:part,uom:qs('co-uom').value,qty:qs('co-qty').value,rate:qs('co-rate').value,amount:amt,pond:qs('co-pond').value};
+  post(data,function(){toast('Voucher entry processed.');fetchAll();qs('co-part').value='';qs('co-qty').value='1';qs('co-rate').value='0';qs('co-amount').value='0';});
+}
+
+// 📊 DATA INSIGHTS
+function tplReports(){
+  return '<div class="card"><div class="card-title">📍 Step 1: Select Target Project Segment</div>'+projBtns('re')+'</div>'
+  +'<div class="card"><div class="card-title">📅 Timeline Custom Date Filter Range Config</div>'
+  +'<div class="two-col"><div><label class="flbl2">From Date</label><input type="date" id="rep-from" value="2026-01-01" onchange="renderReports()"></div>'
+  +'<div><label class="flbl2">To Date</label><input type="date" id="rep-to" value="'+today()+'" onchange="renderReports()"></div></div></div>'
+  +'<div class="report-nav">'
+  +'<span class="rep-tab'+(S.repTab==='costhead'?' active':'')+'" onclick="setRepTab(\'costhead\')">Cost Head Report</span>'
+  +'<span class="rep-tab'+(S.repTab==='feedmed'?' active':'')+'" onclick="setRepTab(\'feedmed\')">Feed & Medicine Log</span>'
+  +'</div>'
+  +'<div class="card" id="report-output-panel"></div>'
+  +'<button class="btn btn-green" onclick="triggerSystemExcelDownload()">⬇️ Export All Database Logs (.XLSX)</button>';
+}
+function setRepTab(t){S.repTab=t;renderReports();}
+
+function renderReports(){
+  var box=qs('report-output-panel');if(!box)return;
+  
+  if(S.repTab=='costhead'){
+    var heads=S.pt==='fish'?FISH_HEADS:VEG_HEADS;var cMap={};heads.forEach(function(h){cMap[h]=0;});var tot=0;
+    S.recs.filter(function(r){return r.type==='cost'&&r.project===S.proj&&inPeriod(r.date);}).forEach(function(r){if(cMap[r.head]!==undefined){cMap[r.head]+=(+r.amount||0);tot+=(+r.amount||0);}});
+    var h='<h3 style="font-size:12px;color:var(--blue);margin-bottom:8px;">Cost Head Analysis: '+S.proj+'</h3>'
+    +'<table class="rep-table"><thead><tr><th>Category Account Head</th><th>Realized Outflow</th></tr></thead><tbody>';
+    heads.forEach(function(hd){h+='<tr><td>'+hd+'</td><td>'+tk(cMap[hd])+'</td></tr>';});
+    h+='<tr class="tot-row"><td>Consolidated Portfolio Summary Total</td><td>'+tk(tot)+'</td></tr></tbody></table>';box.innerHTML=h;
+  }
+  else if(S.repTab=='feedmed'){
+    var n=FISH_PROJ[S.proj]||3;
+    var h='<h3 style="font-size:12px;color:var(--blue);margin-bottom:8px;">Feed & Medicine Log Engine</h3>'
+    +'<table class="rep-table"><thead><tr><th>Structural Unit</th><th>Material Feed Distributed (Kg)</th><th>Medicine Dispensed</th></tr></thead><tbody>';
+    
+    var globalFeed=0,globalMed=0;
+    for(var i=1;i<=n;i++){
+      var fKg=0,mQty=0;
+      S.recs.filter(function(r){return r.project===S.proj&&inPeriod(r.date);}).forEach(function(r){
+        if(r.pond==i && r.type==='feed') fKg += (+r.issKg||0);
+        if(r.pond==i && r.type==='medicine') mQty += (+r.issQty||0);
+      });
+      globalFeed+=fKg;globalMed+=mQty;
+      h+='<tr><td><b>Pond Location Unit '+i+'</b></td><td>'+fmt(fKg)+' Kg</td><td>'+fmt(mQty)+' Units</td></tr>';
+    }
+    box.innerHTML=h+'</tbody></table>';
+  }
+}
+
+function triggerSystemExcelDownload(){
+  if(S.recs.length===0){alert('Database cache record trail empty.');return;}
+  try{
+    var ws=XLSX.utils.json_to_sheet(S.recs);var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"MasterIFMSLogTrail");
+    XLSX.writeFile(wb,"ACIL_IFMS_DetailedReport.xlsx");
+  }catch(e){
+    alert('Local file generation execution blocked.');
+  }
+}
+
+window.onload=function(){S.customFrom='2026-01-01';S.customTo=today();};
+</script>
+</body>
+</html>
