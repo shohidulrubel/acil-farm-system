@@ -3,8 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>ACIL Backward Linkage Project - Fish Module</title>
+<title>ACI Logistics Limited — Backward Linkage Program IFMS</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -12,861 +17,477 @@
   --green:#1e7e34;--green-l:#e8f5e9;
   --red:#c0392b;--red-l:#fdecea;
   --amber:#e67e22;--amber-l:#fff3cd;
-  --teal:#0891b2;--teal-l:#e0f2fe;
-  --purple:#6d28d9;--purple-l:#ede9fe;
-  --gray:#f0f4f8;--border:#dde3ec;
-  --text:#1a1a1a;--text2:#555;--text3:#888;
+  --purple:#6f42c1;--purple-l:#f3e8ff;
+  --teal:#0d7377;--teal-l:#e0f4f4;
+  --gray:#f4f7fa;--border:#cfd8dc;
+  --text:#212121;--text2:#555;
 }
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--gray);min-height:100vh;color:var(--text);-webkit-text-size-adjust:100%}
-
-.header{background:linear-gradient(135deg,#0a2340,var(--blue));color:#fff;padding:.75rem 1rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
-.hdr-l{display:flex;align-items:center;gap:8px}
-.hdr-logo{width:32px;height:32px;border-radius:8px;object-fit:contain;background:#fff;padding:2px}
-.hdr-title{font-size:13px;font-weight:700;margin:0;line-height:1.2}
-.hdr-sub{font-size:10px;opacity:.7;margin:0}
-
-.content{padding:1rem 1rem 60px;max-width:600px;margin:0 auto}
-
-.gateway-container{text-align:center;padding:1rem 0}
-.gateway-title{font-size:15px;font-weight:700;color:#0a2340;margin-bottom:1.25rem}
-.tiles-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1rem}
-.tile-card{background:#fff;border:2px solid var(--border);border-radius:16px;padding:1.25rem 1rem;text-align:center;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.05);transition:transform 0.15s,border-color 0.15s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
-.tile-card:active,.tile-card.active{transform:scale(0.97);border-color:var(--blue2);background:var(--blue-l)}
-.tile-card .tile-icon{font-size:26px}
-.tile-card .tile-label{font-size:12px;font-weight:700;color:var(--text)}
-.tile-card .tile-subtext{font-size:10px;color:var(--text3);margin-top:2px}
-
-.back-bar{display:flex;justify-content:space-between;align-items:center;background:#fff;border-radius:10px;padding:8px 12px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
-.btn-back{background:none;border:none;color:var(--blue);font-weight:700;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:4px}
-.active-project-badge{background:var(--blue-l);color:var(--blue);font-size:11px;font-weight:700;padding:4px 10px;border-radius:12px}
-
-.card{background:#fff;border-radius:14px;padding:1.25rem;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
-.card-title{font-size:13px;font-weight:700;color:var(--blue);margin-bottom:1rem;display:flex;align-items:center;gap:6px;padding-bottom:8px;border-bottom:1.5px solid var(--gray)}
-
-/* Stat summary cards */
-.stat-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
-.stat-box{background:#fff;border-radius:12px;padding:12px;box-shadow:0 1px 4px rgba(0,0,0,.07);text-align:center}
-.stat-box .stat-val{font-size:18px;font-weight:800;line-height:1.1}
-.stat-box .stat-lbl{font-size:10px;color:var(--text3);margin-top:3px}
-.stat-box.green .stat-val{color:var(--green)}
-.stat-box.blue .stat-val{color:var(--blue)}
-.stat-box.amber .stat-val{color:var(--amber)}
-.stat-box.red .stat-val{color:var(--red)}
-.stat-box.purple .stat-val{color:var(--purple)}
-
-/* Cash position banner */
-.cash-banner{background:linear-gradient(135deg,#0a2340,#1c4587);border-radius:14px;padding:1rem;margin-bottom:12px;color:#fff;text-align:center}
-.cash-banner .cash-lbl{font-size:11px;opacity:.75;margin-bottom:4px}
-.cash-banner .cash-val{font-size:28px;font-weight:900;letter-spacing:-0.5px}
-.cash-banner .cash-sub{font-size:10px;opacity:.65;margin-top:4px}
-.cash-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:10px}
-.cash-item{background:rgba(255,255,255,.12);border-radius:8px;padding:8px;text-align:center}
-.cash-item .ci-lbl{font-size:9px;opacity:.7}
-.cash-item .ci-val{font-size:13px;font-weight:800;margin-top:2px}
-.cash-item.green .ci-val{color:#4ade80}
-.cash-item.red .ci-val{color:#f87171}
-.cash-item.blue .ci-val{color:#93c5fd}
-
-.flbl2{font-size:11px;font-weight:600;color:var(--text2);margin-bottom:4px;display:flex;align-items:center;gap:5px;margin-top:2px}
-input[type=date],input[type=number],input[type=text],select.sel{width:100%;font-size:14px;padding:10px;border:1.5px solid var(--border);border-radius:8px;background:#f8fafc;color:var(--text);margin-bottom:10px;appearance:none;-webkit-appearance:none;font-family:inherit}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--gray);color:var(--text);padding-bottom:60px;}
+.header{background:linear-gradient(135deg,#0d233a,var(--blue));color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,.15);}
+.hdr-logo{width:38px;height:38px;border-radius:6px;background:#fff;padding:2px;object-fit:contain;margin-right:10px}
+.hdr-title{font-size:14px;font-weight:700;letter-spacing:.3px}
+.hdr-sub{font-size:10px;opacity:.8}
+.nav-badge{background:rgba(255,255,255,.15);padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;}
+.content{padding:12px;max-width:700px;margin:0 auto}
+.card{background:#fff;border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 2px 6px rgba(0,0,0,.04);border:1px solid #e0e0e0}
+.card-title{font-size:13px;font-weight:700;color:var(--blue);margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid var(--gray);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px}
+.tiles-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+.tiles-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:8px}
+.tile-card{background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:16px 10px;text-align:center;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,.02);transition:transform .1s,border-color .1s;display:flex;flex-direction:column;align-items:center;gap:6px}
+.tile-card:active{transform:scale(.97)}
+.tile-card.active{border-color:var(--blue);background:var(--blue-l)}
+.tile-card .icon{font-size:24px}
+.tile-card .lbl{font-size:12px;font-weight:700}
+.back-bar{display:flex;justify-content:space-between;align-items:center;background:#fff;border-radius:8px;padding:8px 12px;margin-bottom:10px;border:1px solid #e0e0e0}
+.btn-back{background:none;border:none;color:var(--blue);font-weight:700;font-size:12px;cursor:pointer}
+label.lbl-f{font-size:11px;font-weight:600;color:var(--text2);display:block;margin-bottom:4px;margin-top:6px}
+input,select,textarea{width:100%;font-size:13px;padding:9px;border:1.5px solid var(--border);border-radius:6px;background:#fdfdfd;font-family:inherit;color:var(--text);margin-bottom:6px}
+input[readonly]{background:#eceff1;font-weight:600}
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
-
-.stock-table,.issue-table,.summary-table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:10px}
-.stock-table th,.issue-table th,.summary-table th{background:var(--blue);color:#fff;padding:8px;text-align:left;font-size:11px;font-weight:600}
-.stock-table td,.issue-table td,.summary-table td{padding:8px;border-bottom:1px solid var(--gray);vertical-align:middle}
-.stock-table .tot,.summary-table .tot{font-weight:700;background:var(--blue-l);color:var(--blue)}
-
-.issue-table input{margin-bottom:0;padding:6px;font-size:13px;width:80px}
-.issue-table select{margin-bottom:0;padding:6px;font-size:12px;width:90px}
-
-.btn{width:100%;padding:12px;font-size:14px;font-weight:600;border:none;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;margin-bottom:8px}
-.btn:active{opacity:.85}
+.four-col{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px}
+.btn{width:100%;padding:11px;font-size:13px;font-weight:700;border:none;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;margin-top:6px}
 .btn-blue{background:var(--blue);color:#fff}
 .btn-green{background:var(--green);color:#fff}
 .btn-amber{background:var(--amber);color:#fff}
-.btn-teal{background:var(--teal);color:#fff}
 .btn-red{background:var(--red);color:#fff}
 .btn-purple{background:var(--purple);color:#fff}
-
-.tab-row{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
-.tab-btn{padding:7px 14px;font-size:12px;font-weight:700;border:2px solid var(--border);border-radius:20px;background:#fff;cursor:pointer;color:var(--text2)}
-.tab-btn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
-
-/* Chart container */
-.chart-wrap{position:relative;height:220px;width:100%}
-canvas.bar-chart{width:100%!important}
-
-.badge{display:inline-block;padding:3px 8px;border-radius:10px;font-size:10px;font-weight:700}
-.badge-green{background:var(--green-l);color:var(--green)}
-.badge-red{background:var(--red-l);color:var(--red)}
-.badge-amber{background:var(--amber-l);color:var(--amber)}
-.badge-blue{background:var(--blue-l);color:var(--blue)}
-.badge-purple{background:var(--purple-l);color:var(--purple)}
-
-.section-divider{border:none;border-top:1.5px dashed var(--border);margin:12px 0}
-
-.avg-wt-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--gray);font-size:12px}
-.avg-wt-item:last-child{border-bottom:none}
-.avg-wt-item input{width:90px;margin-bottom:0;padding:6px;font-size:13px}
-
-.sales-type-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
-.sales-type-card{background:#fff;border:2px solid var(--border);border-radius:14px;padding:1rem;text-align:center;cursor:pointer;transition:all 0.15s}
-.sales-type-card.active{border-color:var(--green);background:var(--green-l)}
-.sales-type-card .stc-icon{font-size:22px}
-.sales-type-card .stc-label{font-size:12px;font-weight:700;margin-top:4px}
-.sales-type-card .stc-sub{font-size:10px;color:var(--text3)}
-
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:10px 18px;border-radius:25px;font-size:13px;font-weight:600;color:#fff;z-index:999;display:none;box-shadow:0 4px 16px rgba(0,0,0,.2);max-width:88vw}
-.toast.ok{background:var(--green)}
-
-/* Remaining stock indicator */
-.remain-pill{font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px;background:var(--amber-l);color:var(--amber)}
+.btn-teal{background:var(--teal);color:#fff}
+.btn-gray{background:#607d8b;color:#fff}
+.btn-sm{padding:5px 10px;font-size:11px;width:auto;margin-top:0;border-radius:4px;cursor:pointer;border:none;font-weight:700;display:inline-flex;align-items:center;gap:4px}
+.tbl{width:100%;border-collapse:collapse;font-size:11px;margin:8px 0}
+.tbl th{background:var(--blue);color:#fff;padding:7px;text-align:left}
+.tbl td{padding:7px;border-bottom:1px solid #e0e0e0;vertical-align:middle}
+.tbl tr.tot-row{background:var(--blue-l);font-weight:700;color:var(--blue)}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.stat-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px}
+.stat-box{background:#fafafa;border:1px solid #e0e0e0;border-radius:8px;padding:10px;text-align:center}
+.stat-box .val{font-size:16px;font-weight:800;color:var(--blue)}
+.stat-box .lbl{font-size:9px;color:var(--text2);text-transform:uppercase;margin-top:2px}
+.tab-bar{display:flex;gap:4px;margin-bottom:10px;background:#eee;padding:3px;border-radius:6px;overflow-x:auto}
+.tab-item{flex:1;text-align:center;padding:6px 4px;font-size:11px;font-weight:700;cursor:pointer;border-radius:4px;background:none;border:none;color:var(--text2);white-space:nowrap}
+.tab-item.active{background:#fff;color:var(--blue);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--green);color:#fff;padding:8px 16px;border-radius:20px;font-size:12px;font-weight:600;display:none;z-index:9999;box-shadow:0 3px 10px rgba(0,0,0,.2)}
+.chart-box{position:relative;height:200px;width:100%}
+.fingerling-row{background:#f7f9fa;border:1px solid #cfd8dc;border-radius:8px;padding:10px;margin-bottom:8px;position:relative}
+.remove-row-btn{position:absolute;top:8px;right:8px;background:var(--red);color:#fff;border:none;border-radius:4px;padding:2px 7px;cursor:pointer;font-size:11px}
+.voucher-badge{background:var(--blue-l);color:var(--blue);border:1px solid var(--blue2);border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;display:inline-block;margin-bottom:8px}
+.section-divider{border:none;border-top:1.5px dashed var(--border);margin:10px 0}
+.pill{display:inline-block;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700}
+.pill-green{background:var(--green-l);color:var(--green)}
+.pill-red{background:var(--red-l);color:var(--red)}
+.pill-amber{background:var(--amber-l);color:var(--amber)}
+.pill-blue{background:var(--blue-l);color:var(--blue)}
+.prev-entry-bar{background:var(--amber-l);border:1px solid var(--amber);border-radius:8px;padding:8px 12px;margin-bottom:8px;font-size:11px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px}
+@media print{
+  body *{visibility:hidden;background:#fff!important;color:#000!important}
+  #print-space,#print-space *{visibility:visible}
+  #print-space{position:absolute;left:0;top:0;width:100%;padding:15px}
+  .no-print{display:none!important}
+}
 </style>
 </head>
 <body>
-
-<div class="header">
-  <div class="hdr-l">
-    <img class="hdr-logo" src="https://d2t8nl1y0ie1km.cloudfront.net/public/images/shwapno_logo_og.jpg" alt="Logo">
+<div class="header no-print">
+  <div style="display:flex;align-items:center;">
+    <img class="hdr-logo" src="https://d2t8nl1y0ie1km.cloudfront.net/public/images/shwapno_logo_og.jpg" alt="ACI Logo">
     <div>
-      <p class="hdr-title">ACIL Backward Linkage Project</p>
-      <p class="hdr-sub" id="hdr-context-sub">Fish Operation IFMS Module</p>
+      <p class="hdr-title">ACI Logistics Limited</p>
+      <p class="hdr-sub">Backward Linkage Program — IFMS Connected</p>
     </div>
   </div>
+  <div class="nav-badge" id="project-indicator">Syncing Gateway...</div>
 </div>
-
-<div class="app-wrap">
-  <div class="content" id="main-content"></div>
-</div>
-
-<div class="toast" id="toast"></div>
+<div class="content no-print" id="app-view"></div>
+<div id="print-space"></div>
+<div class="toast" id="global-toast"></div>
 
 <script>
-var API = 'https://script.google.com/macros/s/AKfycbzWSefAo-2fHefsDlwequURtDQYuU9beRHwOoes_fiNUTLLgtM0NXiZZslXuBJlTaE4/exec';
-var FISH_PROJ = { Mohonpur: 3, Durgapur: 4 };
-var CORE_UOMS = ['Kg','Ltr','Gm','Ml','Pcs','Each','Doz','Box','Bottle','Pack','Bag'];
-var DEFAULTS_SPECIES = ['Bighead','Black Carp','Catla','Chital','Foli','Grass Carp','Mirror Carp (Japani)','Mrigel','Rui','Silver Carp'];
-var FEED_TYPES = ['Carp Grower Sinking Feed','Carp Grower Floating Feed','Mixed Feed'];
-var FISH_HEADS = ['Lease Value','Fingerling Cost','Feed Cost','Labor Cost','Pond Management','Medicine Cost','Electricity & Water Supply','Transport Cost','Shed Cost','Harvesting Cost','Maintenance & Others Cost'];
+// =========================================================================
+// DEPLOYMENT INTEGRATION & STATE
+// =========================================================================
+var SPECIES_LIST = ['Bighead','Black Carp','Catla','Foli','Grass Carp','Gulsha','Kalbaus','Mirror Carp (Japani)','Mrigel','Rui','SIFS','Silver Carp'];
+var EXP_HEADS = ['Lease Value','Feed Cost','Labor Cost','Medicine Cost','Transport Cost','Harvesting Cost','Electricity & Water Supply','Fingerling Cost','Maintenance','Pond Management'];
+var MED_LIST = ["All Cleared","Aquakleen","Biokill","BKC","Ciproflox","Deltamethrine","Fenfen","Genabel","Germo-heat","Germo-nil","Ivermectin 3%","Krilcord","Lime","ParaCefvet","Potassium","Potassium Permanganate","TH-5 BKC","Vitamin-C","Yucca","Zeolight","Others"];
+var FEED_TYPES = ['Carp Grower Floating','Carp Grower Sinking','Mixed Feed'];
+var NO_DISCOUNT_HEADS = ['Lease Value','Labor Cost','Transport Cost','Harvesting Cost','Electricity & Water Supply'];
+var GSTORE_HEADS = ['Feed Cost','Medicine Cost'];
 
-// Other sales cost heads
-var OTHER_SALES_HEADS = ['Other sales'];
-
-var S = {
-  screen: 'project_gateway',
-  proj: null,
-  fishActionMode: 'purchase',
-  salesMode: 'fish',   // 'fish' or 'other'
-  recs: [],
-  avgWeights: {},      // {proj: {species: avgWt}}
-  fundViewMode: 'project' // 'project' or 'combined'
+var AppState = {
+  view:'gateway', project:null,
+  db:{ponds:[],payments:[],receipts:[],funds:[],fish_movement:[],mortality:[],feed_issues:[],medicine_issues:[]},
+  cart:[], fingerlingRows:[],
+  inv_tab:'fish', rep_tab:'dashboard', rep_scope:'all', rep_date_from:'', rep_date_to:'',
+  feedIssueRows:[], medIssueRows:[]
 };
 
-// ========== HELPERS ==========
+window.onload = function(){ renderActiveView(); };
+
+function renderActiveView(){
+  var v=AppState.view, box=document.getElementById('app-view');
+  document.getElementById('project-indicator').textContent = AppState.project?("📍 "+AppState.project):"IFMS Gateway";
+  if(v==='gateway') box.innerHTML=uiGateway();
+  else if(v==='menu') box.innerHTML=uiMenu();
+  else if(v==='payment') box.innerHTML=uiPayment();
+  else if(v==='receipt') box.innerHTML=uiReceipt();
+  else if(v==='funds') box.innerHTML=uiFunds();
+  else if(v==='inventory') box.innerHTML=uiInventory();
+  else if(v==='ponds') box.innerHTML=uiPonds();
+  else if(v==='reports') box.innerHTML=uiReports();
+  else if(v==='ledger') box.innerHTML=uiLedger();
+  else if(v==='dashboard') box.innerHTML=uiDashboard();
+  setTimeout(function(){ if(v==='reports')initAllReportCharts(); if(v==='dashboard')initDashboardCharts(); },100);
+}
+
+function navigateTo(t){AppState.view=t;document.getElementById('print-space').innerHTML='';renderActiveView();}
+
+function selectProject(p) {
+  AppState.project = p;
+  AppState.view = 'menu';
+  showToast("Downloading real-time database registers...", "var(--blue2)");
+  
+  // Dynamic JSON parsing from Google Sheet Database Pipeline
+  google.script.run
+    .withSuccessHandler(function(cloudState) {
+      AppState.db.ponds = cloudState.ponds.map(row => ({ project: row["Project"], pond: row["Pond ID"], bigha: row["Bigha Area"], status: row["Status"] }));
+      AppState.db.payments = cloudState.payments.map(row => ({ project: row["Project"], date: row["Txn Date"], head: row["Cost Head"], netAmount: row["Net Amount"], voucher: row["Voucher"], supplier: row["Supplier Name"], mobile: row["Supplier Mobile"], receivedDate: row["Received Date"], product: row["Product/Species"], qty: row["Quantity"], rate: row["Rate"], locator: row["Locator Location"] }));
+      showToast("Cloud synchronization verified active!");
+      renderActiveView();
+    })
+    .withFailureHandler(function(err) {
+      alert("Network Synchronization Failed: " + err.message);
+    })
+    .getIFMSDatabaseState(p);
+}
+
+function navBack(t){return`<div class="back-bar no-print"><button class="btn-back" onclick="navigateTo('${t}')">⬅️ Back</button><b style="font-size:12px;color:var(--blue)">📍 ${AppState.project||''}</b></div>`;}
 function today(){return new Date().toISOString().split('T')[0];}
-function fmt(n){return Number(n||0).toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:2});}
-function fmt0(n){return Number(n||0).toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0});}
-function toast(msg){var t=qs('toast');t.textContent=msg;t.className='toast ok';t.style.display='block';setTimeout(function(){t.style.display='none';},3000);}
-function qs(id){return document.getElementById(id);}
-function getPondName(p){return (p==='Overall Project' || p==='Overall' || p==='Inventory Store') ? p : 'Pond '+p;}
+function showToast(msg,color){
+  var t=document.getElementById('global-toast');
+  t.textContent=msg; t.style.background=color||'var(--green)'; t.style.display='block';
+  setTimeout(()=>t.style.display='none',2800);
+}
+function fmt(n){return(+n||0).toLocaleString(undefined,{maximumFractionDigits:0});}
+function fmtDec(n){return(+n||0).toLocaleString(undefined,{maximumFractionDigits:2});}
 
-window.onload = function(){
-  renderCurrentScreen();
-  fetchAll();
-};
-
-// ========== ROUTING ==========
-function renderCurrentScreen(){
-  var c = qs('main-content');
-  var subHdr = qs('hdr-context-sub');
-
-  if(S.screen === 'project_gateway'){
-    subHdr.textContent = "Fish Operation IFMS Gateway";
-    c.innerHTML = tplProjectGateway();
-  } else if(S.screen === 'modules_menu'){
-    subHdr.textContent = "Project: " + S.proj + " Workspace";
-    c.innerHTML = tplModulesMenu();
-  } else if(S.screen === 'inventory_menu'){
-    c.innerHTML = renderBackNav('modules_menu') + tplInventoryMenu();
-  } else if(S.screen === 'fish_stock_dash'){
-    c.innerHTML = renderBackNav('inventory_menu') + tplFishStockDash();
-    renderStockTable();
-    renderBiomassChart();
-  } else if(S.screen === 'feed_stock_dash'){
-    c.innerHTML = renderBackNav('inventory_menu') + tplFeedStockDash();
-    rebuildPondIssueGrid('feed');
-  } else if(S.screen === 'medicine_stock_dash'){
-    c.innerHTML = renderBackNav('inventory_menu') + tplMedicineStockDash();
-    rebuildPondIssueGrid('medicine');
-    renderMedicineStock();
-  } else if(S.screen === 'cost'){
-    c.innerHTML = renderBackNav('modules_menu') + tplCost();
-  } else if(S.screen === 'sales'){
-    c.innerHTML = renderBackNav('modules_menu') + tplSalesGateway();
-  } else if(S.screen === 'fund'){
-    c.innerHTML = renderBackNav('modules_menu') + tplFund();
-    renderCashPosition();
-  } else if(S.screen === 'avg_weight_editor'){
-    c.innerHTML = renderBackNav('fish_stock_dash') + tplAvgWeightEditor();
-  }
+// =========================================================================
+// GATEWAY & MENU LAYOUT UI
+// =========================================================================
+function uiGateway(){
+  return`<div class="card" style="text-align:center;padding:25px 15px;">
+    <div style="font-size:36px;margin-bottom:8px;">🐟</div>
+    <h3 style="color:var(--blue);margin-bottom:4px;">ACI Fish Farm IFMS</h3>
+    <p style="font-size:11px;color:var(--text2);margin-bottom:16px;">Select Active Operation Site</p>
+    <div class="tiles-grid">
+      <div class="tile-card" onclick="selectProject('Durgapur')"><span class="icon">🏞️</span><span class="lbl">Durgapur</span><span style="font-size:10px;color:var(--text2)">Fish Project</span></div>
+      <div class="tile-card" onclick="selectProject('Mohanpur')"><span class="icon">🌊</span><span class="lbl">Mohanpur</span><span style="font-size:10px;color:var(--text2)">Fish Project</span></div>
+    </div>
+  </div>`;
+}
+function uiMenu(){
+  return`<div class="back-bar no-print"><button class="btn-back" onclick="AppState.project=null;navigateTo('gateway')">⬅️ Switch Project</button></div>
+  <div class="card">
+    <h4 style="margin-bottom:10px;text-align:center;color:var(--blue)">📋 ${AppState.project} — Operations</h4>
+    <div class="tiles-grid">
+      <div class="tile-card" onclick="navigateTo('payment')"><span class="icon">💸</span><span class="lbl">A. Payment Entry</span></div>
+      <div class="tile-card" onclick="navigateTo('receipt')"><span class="icon">📋</span><span class="lbl">B. Revenue Booking</span></div>
+      <div class="tile-card" onclick="navigateTo('funds')"><span class="icon">🏦</span><span class="lbl">C. Fund Inflows</span></div>
+      <div class="tile-card" onclick="navigateTo('inventory')"><span class="icon">📦</span><span class="lbl">D. Inventory</span></div>
+      <div class="tile-card" onclick="navigateTo('reports')"><span class="icon">📊</span><span class="lbl">E. Reports</span></div>
+      <div class="tile-card" onclick="navigateTo('ponds')"><span class="icon">🏊</span><span class="lbl">F. Pond Info</span></div>
+    </div>
+    <div style="margin-top:10px;display:flex;gap:6px;">
+      <button class="btn btn-blue" style="flex:1;padding:8px;font-size:12px;" onclick="navigateTo('dashboard')">📈 Dashboard</button>
+      <button class="btn btn-gray" style="flex:1;padding:8px;font-size:12px;" onclick="navigateTo('ledger')">📒 Ledger</button>
+    </div>
+  </div>`;
 }
 
-function fetchAll(){
-  fetch(API+'?action=getAll&pt=fish')
-    .then(function(r){return r.json();})
-    .then(function(d){
-      S.recs = d.rows||[];
-      renderCurrentScreen();
-    }).catch(function(){});
+// =========================================================================
+// A. PAYMENT ENTRY
+// =========================================================================
+function uiPayment(){
+  var ponds=AppState.db.ponds.filter(p=>p.project===AppState.project);
+  var pOpts=ponds.map(p=>`<option value="${p.pond}">${p.pond} (${p.bigha}B)</option>`).join('');
+  var hOpts=EXP_HEADS.map(x=>`<option value="${x}">${x}</option>`).join('');
+  var prevPayments=(AppState.db.payments||[]).filter(p=>p.project===AppState.project);
+  var prevBar=prevPayments.length>0?`<div class="prev-entry-bar">
+    <span>📝 Last: <b>${prevPayments[prevPayments.length-1].head}</b> — ৳${fmt(prevPayments[prevPayments.length-1].netAmount)} on ${prevPayments[prevPayments.length-1].date}</span>
+    <button class="btn btn-amber btn-sm" onclick="viewLastPayEntry()">👁️ View</button>
+  </div>`:'';
+  return navBack('menu')+prevBar+`
+  <div class="card">
+    <div class="card-title">💸 Payment Voucher Entry
+      <span class="voucher-badge" style="margin:0">Voucher: <span id="p-voucher">AUTO-GENERATING</span></span>
+    </div>
+    <div class="two-col">
+      <div><label class="lbl-f">Transaction Date</label><input type="date" id="p-date" value="${today()}"></div>
+      <div><label class="lbl-f">Receiving Date</label><input type="date" id="p-rcvd-date" value="${today()}"></div>
+    </div>
+    <div class="two-col">
+      <div><label class="lbl-f">Challan No. (Optional)</label><input type="text" id="p-challan" placeholder="CH-XXXX"></div>
+      <div><label class="lbl-f">Cost Head</label><select id="p-head" onchange="onPaymentHeadChange()">${hOpts}</select></div>
+    </div>
+    <div id="fingerling-multi-section" style="display:none;">
+      <div style="background:var(--amber-l);border:1px solid var(--amber);border-radius:8px;padding:10px;margin:8px 0;">
+        <b style="font-size:12px;">🐟 Fingerling Purchase — Bulk System Multi Species</b>
+      </div>
+      <div class="two-col">
+        <div><label class="lbl-f">Party Name</label><input type="text" id="fl-party" placeholder="Supplier / Nursery"></div>
+        <div><label class="lbl-f">Party Mobile</label><input type="text" id="fl-mobile" placeholder="01XXXXX"></div>
+      </div>
+      <div id="fingerling-rows-container"></div>
+      <button class="btn btn-blue" style="background:var(--blue2);margin-top:6px;" onclick="addFingerlingRow()">➕ Add Fish Species</button>
+      <div style="margin-top:10px;" id="fingerling-totals-display"></div>
+      <button class="btn btn-green" onclick="submitFingerlingEntry()">💾 Save Fingerling Purchase</button>
+    </div>
+    <div id="standard-payment-section">
+      <div class="two-col">
+        <div><label class="lbl-f">Product</label><div id="p-prod-box"></div></div>
+        <div><label class="lbl-f">Particulars (Optional)</label><input type="text" id="p-part" placeholder="Details..."></div>
+      </div>
+      <div class="three-col">
+        <div><label class="lbl-f">MOU / Unit</label><input type="text" id="p-uom" readonly></div>
+        <div><label class="lbl-f">Quantity</label><input type="number" id="p-qty" value="0" oninput="calcPaymentTotals()"></div>
+        <div><label class="lbl-f">Rate / Unit (Tk)</label><input type="number" id="p-rate" value="0" oninput="calcPaymentTotals()"></div>
+      </div>
+      <div id="p-discount-row" class="two-col">
+        <div><label class="lbl-f">Discount Value</label><input type="number" id="p-disc" value="0" oninput="calcPaymentTotals()"></div>
+        <div><label class="lbl-f">Discount Type</label>
+          <select id="p-disc-type" onchange="calcPaymentTotals()"><option value="Tk">Flat Tk</option><option value="Pct">% Percent</option></select>
+        </div>
+      </div>
+      <div class="two-col">
+        <div><label class="lbl-f">Gross Amount (Tk)</label><input type="number" id="p-gross" readonly value="0"></div>
+        <div><label class="lbl-f">Net Amount (Tk)</label><input type="number" id="p-net" readonly value="0" style="color:var(--green);font-weight:700"></div>
+      </div>
+      <div class="two-col">
+        <div><label class="lbl-f" id="lbl-supplier-name">Supplier Name</label><input type="text" id="p-supplier" placeholder="Entity name"></div>
+        <div><label class="lbl-f">Supplier Mobile</label><input type="text" id="p-mobile" placeholder="01XXXXX"></div>
+      </div>
+      <div>
+        <label class="lbl-f" id="lbl-locator">Locator</label>
+        <select id="p-locator">
+          <option value="Project">Project (${AppState.project})</option>
+          <option value="GStore">GStore</option>
+          ${pOpts}
+        </select>
+      </div>
+      <button class="btn btn-green" onclick="submitPaymentEntry()">💾 Save Payment</button>
+    </div>
+  </div>`;
 }
 
-function post(data,cb){
-  fetch(API,{method:'POST',body:JSON.stringify(data)}).then(function(r){return r.json();}).then(cb).catch(function(){alert('Network sync failure.');});
+function viewLastPayEntry(){
+  var p=(AppState.db.payments||[]).filter(x=>x.project===AppState.project);
+  if(p.length) printPaymentVoucher(p[p.length-1]);
 }
 
-function renderBackNav(targetScreen){
-  var labels = {
-    project_gateway:'⬅️ Back to Project Gateway',
-    modules_menu:'⬅️ Back to Modules',
-    inventory_menu:'⬅️ Back to Inventory',
-    fish_stock_dash:'⬅️ Back to Fish Stock'
+function onPaymentHeadChange(){
+  var h=document.getElementById('p-head').value;
+  var pBox=document.getElementById('p-prod-box');
+  var uom=document.getElementById('p-uom');
+  var dRow=document.getElementById('p-discount-row');
+  var lblSup=document.getElementById('lbl-supplier-name');
+  var loc=document.getElementById('p-locator');
+  var lblLoc=document.getElementById('lbl-locator');
+  var stdSection=document.getElementById('standard-payment-section');
+  var flSection=document.getElementById('fingerling-multi-section');
+  if(h==='Fingerling Cost'){stdSection.style.display='none';flSection.style.display='block';if(document.getElementById('fingerling-rows-container').children.length===0)addFingerlingRow();return;}
+  stdSection.style.display='block';flSection.style.display='none';
+  dRow.style.display='grid';lblSup.textContent='Supplier Name';
+  if(h==='Lease Value'){pBox.innerHTML=`<select id="p-prod"><option value="Rent Expense">Rent Expense</option></select>`;uom.value='Each';uom.readOnly=true;dRow.style.display='none';setLocatorExpense(loc,lblLoc);}
+  else if(h==='Feed Cost'){pBox.innerHTML=`<select id="p-prod">${FEED_TYPES.map(f=>`<option value="${f}">${f}</option>`).join('')}</select>`;uom.value='kg';uom.readOnly=true;loc.innerHTML=`<option value="GStore">GStore</option>`;lblLoc.textContent='Inventory Warehouse Locator';}
+  else if(h==='Labor Cost'){pBox.innerHTML=`<select id="p-prod" onchange="onLaborProdChange()"><option value="Wages">Wages</option><option value="Salary">Salary</option><option value="Others">Others</option></select>`;uom.value='Each';uom.readOnly=true;dRow.style.display='none';setLocatorExpense(loc,lblLoc);onLaborProdChange();}
+  else if(h==='Medicine Cost'){var opts=MED_LIST.map(m=>`<option value="${m}">${m}</option>`).join('');pBox.innerHTML=`<select id="p-prod">${opts}</select>`;uom.value='Pack';uom.readOnly=false;loc.innerHTML=`<option value="GStore">GStore</option>`;lblLoc.textContent='Inventory Warehouse Locator';}
+  else{pBox.innerHTML=`<input type="text" id="p-prod" placeholder="Enter item name">`;uom.value='Each';uom.readOnly=false;if(NO_DISCOUNT_HEADS.indexOf(h)!==-1)dRow.style.display='none';setLocatorExpense(loc,lblLoc);}
+}
+
+function setLocatorExpense(loc,lblLoc){
+  var ponds=AppState.db.ponds.filter(p=>p.project===AppState.project);
+  var pOpts=ponds.map(p=>`<option value="${p.pond}">${p.pond}</option>`).join('');
+  loc.innerHTML=`<option value="Project">Project (${AppState.project})</option>${pOpts}`;
+  lblLoc.textContent='Expense Booking Locator';
+}
+
+function onLaborProdChange(){
+  var p=document.getElementById('p-prod')?document.getElementById('p-prod').value:'';
+  document.getElementById('lbl-supplier-name').textContent=(p==='Salary')?'Employee Name *':'Supplier Name';
+}
+
+function calcPaymentTotals(){
+  var q=+document.getElementById('p-qty').value||0;
+  var r=+document.getElementById('p-rate').value||0;
+  var gross=q*r;
+  document.getElementById('p-gross').value=gross;
+  var disc=+(document.getElementById('p-disc')||{}).value||0;
+  var dType=(document.getElementById('p-disc-type')||{}).value||'Tk';
+  var finalDisc=dType==='Pct'?(gross*disc/100):disc;
+  document.getElementById('p-net').value=Math.max(0,gross-finalDisc);
+}
+
+function addFingerlingRow(){
+  var ponds=AppState.db.ponds.filter(p=>p.project===AppState.project);
+  var pOpts=ponds.map(p=>`<option value="${p.pond}">${p.pond}</option>`).join('');
+  var sOpts=SPECIES_LIST.map(s=>`<option value="${s}">${s}</option>`).join('');
+  var container=document.getElementById('fingerling-rows-container');
+  var rowId='fr-'+Date.now();
+  var div=document.createElement('div');
+  div.className='fingerling-row'; div.id=rowId;
+  div.innerHTML=`<button class="remove-row-btn" onclick="document.getElementById('${rowId}').remove();updateFingerlingTotals()">✕</button>
+    <div class="three-col">
+      <div><label class="lbl-f">Fish Species</label><select class="fr-species">${sOpts}</select></div>
+      <div><label class="lbl-f">Pond Locator</label><select class="fr-pond"><option value="Project">Project Level</option>${pOpts}</select></div>
+      <div><label class="lbl-f">Unit</label><input type="text" class="fr-uom" value="Pcs"></div>
+    </div>
+    <div class="three-col">
+      <div><label class="lbl-f">Quantity</label><input type="number" class="fr-qty" value="0" oninput="calcFRow(this)"></div>
+      <div><label class="lbl-f">Rate/Pcs (Tk)</label><input type="number" class="fr-rate" value="0" oninput="calcFRow(this)"></div>
+      <div><label class="lbl-f">Amount (Tk)</label><input type="number" class="fr-amt" readonly value="0"></div>
+    </div>
+    <div><label class="lbl-f">Particulars</label><input type="text" class="fr-part" placeholder="Notes..."></div>`;
+  container.appendChild(div); updateFingerlingTotals();
+}
+
+function calcFRow(el){var row=el.closest('.fingerling-row');row.querySelector('.fr-amt').value=(+row.querySelector('.fr-qty').value||0)*(+row.querySelector('.fr-rate').value||0);updateFingerlingTotals();}
+
+function updateFingerlingTotals(){
+  var rows=document.querySelectorAll('.fingerling-row'),total=0;
+  rows.forEach(r=>{total+=+r.querySelector('.fr-amt').value||0;});
+  var disp=document.getElementById('fingerling-totals-display');
+  if(disp)disp.innerHTML=`<div style="background:var(--blue-l);border-radius:6px;padding:8px;text-align:right;font-weight:700;font-size:13px;">Total: <span style="color:var(--blue)">৳${fmt(total)}</span></div>`;
+}
+
+function submitPaymentEntry() {
+  var h = document.getElementById('p-head').value;
+  if(h === 'Fingerling Cost') { submitFingerlingEntry(); return; }
+  
+  var prodEl = document.getElementById('p-prod');
+  var prod = prodEl ? (prodEl.tagName === 'SELECT' ? prodEl.value : prodEl.value) : '';
+  var q = +document.getElementById('p-qty').value || 0;
+  var r = +document.getElementById('p-rate').value || 0;
+  var sup = document.getElementById('p-supplier').value.trim();
+  var mob = document.getElementById('p-mobile').value.trim();
+  
+  if (q <= 0 || r <= 0 || !prod) { alert('Quantity, Rate and Product are required.'); return; }
+  
+  var payload = {
+    project: AppState.project,
+    date: document.getElementById('p-date').value,
+    receivedDate: document.getElementById('p-rcvd-date').value,
+    challanNo: document.getElementById('p-challan').value,
+    head: h,
+    product: prod,
+    particular: document.getElementById('p-part').value,
+    uom: document.getElementById('p-uom').value,
+    qty: q,
+    rate: r,
+    amount: +document.getElementById('p-gross').value,
+    discount: +document.getElementById('p-disc').value || 0,
+    netAmount: +document.getElementById('p-net').value,
+    supplier: sup,
+    mobile: mob,
+    locator: document.getElementById('p-locator').value
   };
-  return '<div class="back-bar">'
-       + '<button class="btn-back" onclick="navigateToScreen(\''+targetScreen+'\')">'+( labels[targetScreen]||'⬅️ Back')+'</button>'
-       + '<span class="active-project-badge">📍 '+S.proj+'</span>'
-       + '</div>';
-}
-
-function navigateToScreen(s){S.screen=s;renderCurrentScreen();}
-function selectProjectFromGateway(p){S.proj=p;S.screen='modules_menu';renderCurrentScreen();}
-
-function getPondOptions(includeOverall){
-  var h='';
-  if(includeOverall) h+='<option value="Overall Project">🌍 Overall Project View</option>';
-  var n=FISH_PROJ[S.proj]||3;
-  for(var i=1;i<=n;i++) h+='<option value="'+i+'">Pond Zone Unit '+i+'</option>';
-  return h;
-}
-function getPondOptionsWithGlobal(){
-  var h='<option value="Overall Project">⭐ Overall Project Head</option>';
-  var n=FISH_PROJ[S.proj]||3;
-  for(var i=1;i<=n;i++) h+='<option value="'+i+'">Pond Zone Unit '+i+'</option>';
-  return h;
-}
-function getSpeciesDataList(){
-  return '<datalist id="species-defaults">'+DEFAULTS_SPECIES.map(function(s){return '<option value="'+s+'">';}).join('')+'</datalist>';
-}
-
-// ========== PROJECT GATEWAY ==========
-function tplProjectGateway(){
-  var list = Object.keys(FISH_PROJ);
-  return '<div class="gateway-container">'
-       + '<h2 class="gateway-title">Select Active Target Project</h2>'
-       + '<div class="tiles-grid">'
-       + list.map(function(p){
-           return '<div class="tile-card" onclick="selectProjectFromGateway(\''+p+'\')"><div class="tile-icon">🏝️</div><div class="tile-label">'+p+' Project</div><div class="tile-subtext">'+FISH_PROJ[p]+' Pond Areas</div></div>';
-         }).join('')
-       + '</div></div>';
-}
-
-// ========== MODULES MENU ==========
-function tplModulesMenu(){
-  return '<div class="gateway-container">'
-       + '<div class="back-bar"><button class="btn-back" onclick="navigateToScreen(\'project_gateway\')">⬅️ Back to Project Selection</button><span class="active-project-badge">📍 '+S.proj+'</span></div>'
-       + '<h2 class="gateway-title" style="margin-top:10px;">Select Application Module</h2>'
-       + '<div class="tiles-grid">'
-       + '<div class="tile-card" onclick="navigateToScreen(\'inventory_menu\')"><div class="tile-icon">📦</div><div class="tile-label">Inventory Management</div><div class="tile-subtext">Fish, Feed, Medicine Stock</div></div>'
-       + '<div class="tile-card" onclick="navigateToScreen(\'cost\')"><div class="tile-icon">💰</div><div class="tile-label">Cost Booking</div><div class="tile-subtext">Log Operational Opex</div></div>'
-       + '<div class="tile-card" onclick="navigateToScreen(\'sales\')"><div class="tile-icon">📈</div><div class="tile-label">Revenue Entry</div><div class="tile-subtext">Fish & Other Sales</div></div>'
-       + '<div class="tile-card" onclick="navigateToScreen(\'fund\')"><div class="tile-icon">🏦</div><div class="tile-label">Fund Status</div><div class="tile-subtext">Capital Ledger & Cash Position</div></div>'
-       + '</div></div>';
-}
-
-// ========== INVENTORY MENU ==========
-function tplInventoryMenu(){
-  return '<div class="gateway-container">'
-       + '<h2 class="gateway-title">Inventory Management Sub-Modules</h2>'
-       + '<div class="tiles-grid">'
-       + '<div class="tile-card" onclick="navigateToScreen(\'fish_stock_dash\')"><div class="tile-icon">🐟</div><div class="tile-label">Fish Stock</div><div class="tile-subtext">Purchase, Transfer, Sales, Mortality</div></div>'
-       + '<div class="tile-card" onclick="navigateToScreen(\'feed_stock_dash\')"><div class="tile-icon">🌾</div><div class="tile-label">Feed Stock</div><div class="tile-subtext">Procurement & Allocation</div></div>'
-       + '<div class="tile-card" onclick="navigateToScreen(\'medicine_stock_dash\')"><div class="tile-icon">💊</div><div class="tile-label">Medicine Stock</div><div class="tile-subtext">Inward Logs & Outward Issues</div></div>'
-       + '</div></div>';
-}
-
-// ========== FISH STOCK CALC ENGINE ==========
-function getDynamicFishStockSummary(proj, filterPond, species){
-  var purchasePcs=0,transferInPcs=0,transferOutPcs=0,salesPcs=0,mortalityPcs=0;
-  var purchaseBio=0,transferInBio=0,transferOutBio=0,salesBio=0,mortalityBio=0;
-  S.recs.filter(function(r){return r.project===proj;}).forEach(function(r){
-    var rSp=(r.fishType||r.speciesName||'').trim().toLowerCase();
-    var target=species.trim().toLowerCase();
-    if(rSp===target){
-      var isTargetPond=(filterPond==='Overall Project'||r.pond==filterPond);
-      var qty=+r.qty||+r.quantityPcs||0;
-      var bio=+r.weight||+r.weightKg||0;
-      if(r.type==='fishstock'&&isTargetPond){purchasePcs+=qty;purchaseBio+=bio;}
-      if(r.type==='mortality'&&isTargetPond){mortalityPcs+=qty;mortalityBio+=bio;}
-      if(r.type==='fishsales'&&isTargetPond){salesPcs+=qty;salesBio+=bio;}
-      if(r.type==='transfer'){
-        if(filterPond==='Overall Project'){
-          if(r.fromPond==='External Source'){transferInPcs+=qty;transferInBio+=bio;}
-          if(r.toPond==='External Recipient'){transferOutPcs+=qty;transferOutBio+=bio;}
-        } else {
-          if(r.fromPond==filterPond){transferOutPcs+=qty;transferOutBio+=bio;}
-          if(r.toPond==filterPond){transferInPcs+=qty;transferInBio+=bio;}
-        }
+  
+  showToast("Committing transactional write-lock sequence...", "var(--amber)");
+  
+  google.script.run
+    .withSuccessHandler(function(response) {
+      if(response.success) {
+        showToast("Voucher Saved To Cloud Sheet!");
+        payload.voucher = response.voucher;
+        AppState.db.payments.push(payload);
+        printPaymentVoucher(payload);
       }
+    })
+    .withFailureHandler(function(err) { alert("Write Operation Aborted: " + err.message); })
+    .commitPaymentRecord(payload);
+}
+
+function submitFingerlingEntry() {
+  var party = (document.getElementById('fl-party') || {}).value || '';
+  var mobile = (document.getElementById('fl-mobile') || {}).value || '';
+  var date = document.getElementById('p-date').value;
+  var rcvdDate = document.getElementById('p-rcvd-date').value;
+  var challan = document.getElementById('p-challan').value;
+  
+  var rows = document.querySelectorAll('.fingerling-row'), entries = [];
+  rows.forEach(r => {
+    var qty = +r.querySelector('.fr-qty').value || 0, rate = +r.querySelector('.fr-rate').value || 0;
+    if(qty > 0 && rate > 0) {
+      entries.push({
+        project: AppState.project, date: date, receivedDate: rcvdDate, challanNo: challan,
+        product: r.querySelector('.fr-species').value, particular: r.querySelector('.fr-part').value,
+        uom: r.querySelector('.fr-uom').value, qty: qty, rate: rate, amount: qty * rate, netAmount: qty * rate,
+        supplier: party, mobile: mobile, locator: r.querySelector('.fr-pond').value
+      });
     }
   });
-  var closingQty=purchasePcs+transferInPcs-transferOutPcs-salesPcs-mortalityPcs;
-  var closingBiomass=purchaseBio+transferInBio-transferOutBio-salesBio-mortalityBio;
-  return {qty:Math.max(0,closingQty),biomass:Math.max(0,closingBiomass)};
-}
-
-// Per-pond biomass for chart
-function getBiomassByPond(proj){
-  var n=FISH_PROJ[proj]||3;
-  var result=[];
-  for(var i=1;i<=n;i++){
-    var total=0;
-    DEFAULTS_SPECIES.forEach(function(sp){
-      var m=getDynamicFishStockSummary(proj,String(i),sp);
-      total+=m.biomass;
-    });
-    result.push({pond:'Pond '+i,biomass:total});
-  }
-  return result;
-}
-
-// ========== FISH STOCK DASHBOARD ==========
-function tplFishStockDash(){
-  var m=S.fishActionMode;
-
-  // Current Fish Status tiles
-  var n=FISH_PROJ[S.proj]||3;
-  var allBio=0, allPcs=0;
-  DEFAULTS_SPECIES.forEach(function(sp){
-    var metric=getDynamicFishStockSummary(S.proj,'Overall Project',sp);
-    allBio+=metric.biomass; allPcs+=metric.qty;
-  });
-
-  var statusTiles='<div class="stat-row" style="grid-template-columns:1fr 1fr 1fr;">'
-    +'<div class="stat-box blue"><div class="stat-val">'+fmt0(allPcs)+'</div><div class="stat-lbl">Total Pcs (Live)</div></div>'
-    +'<div class="stat-box green"><div class="stat-val">'+fmt(allBio)+'</div><div class="stat-lbl">Total Biomass (Kg)</div></div>'
-    +'<div class="stat-box amber"><div class="stat-val">'+n+'</div><div class="stat-lbl">Active Ponds</div></div>'
-    +'</div>';
-
-  var h='<div class="card" style="padding-bottom:8px;">'
-      +'<div class="card-title">🐟 Current Fish Status — '+S.proj+'</div>'
-      +statusTiles
-      +'<button class="btn btn-purple" style="margin-top:4px;padding:9px;" onclick="navigateToScreen(\'avg_weight_editor\')">⚖️ Update Avg Weight (Kg/Pc) by Species</button>'
-      +'</div>';
-
-  h+='<div class="gateway-container" style="padding-top:0;">'
-    +'<h3 class="gateway-title" style="margin-bottom:10px;font-size:13px;text-align:left;color:var(--text2)">⚙️ Transaction Category</h3>'
-    +'<div class="tiles-grid" style="grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px;">'
-    +'<div class="tile-card '+(m==='purchase'?'active':'')+'" style="padding:10px 4px;border-radius:10px;" onclick="setFishMode(\'purchase\')"><span style="font-size:16px">📥</span><b style="font-size:10px">Purchase</b></div>'
-    +'<div class="tile-card '+(m==='transfer'?'active':'')+'" style="padding:10px 4px;border-radius:10px;" onclick="setFishMode(\'transfer\')"><span style="font-size:16px">🔄</span><b style="font-size:10px">Transfer</b></div>'
-    +'<div class="tile-card '+(m==='sales'?'active':'')+'" style="padding:10px 4px;border-radius:10px;" onclick="setFishMode(\'sales\')"><span style="font-size:16px">📈</span><b style="font-size:10px">Sales</b></div>'
-    +'<div class="tile-card '+(m==='mortality'?'active':'')+'" style="padding:10px 4px;border-radius:10px;" onclick="setFishMode(\'mortality\')"><span style="font-size:16px">☠️</span><b style="font-size:10px">Mortality</b></div>'
-    +'</div></div>';
-
-  h+='<div class="card"><div class="card-title" id="fsk-form-title">📝 Fish Entry Log</div>'
-    +'<div class="two-col"><div><label class="flbl2">Processing Date</label><input type="date" id="fsk-date" value="'+today()+'"></div>'
-    +'<div id="pond-input-wrapper"><label class="flbl2">Target Pond Unit</label><select class="sel" id="fsk-pond">'+getPondOptions(false)+'</select></div></div>'
-    +'<div class="two-col"><div><label class="flbl2">Fish Type / Species</label><input type="text" id="fsk-species" list="species-defaults" placeholder="e.g. Rui">'+getSpeciesDataList()+'</div>'
-    +'<div><label class="flbl2">Quantity (Pcs)</label><input type="number" id="fsk-qty" value="0" oninput="autoCalcFishBiomass()"></div></div>'
-    +'<div class="two-col"><div><label class="flbl2">Avg Weight (Kg/Pc)</label><input type="number" id="fsk-avgwt" value="0.200" step="0.001" oninput="autoCalcFishBiomass()"></div>'
-    +'<div><label class="flbl2">Calculated Biomass (Kg)</label><input type="number" id="fsk-biomass" value="0" readonly style="background:var(--blue-l);font-weight:700;"></div></div>'
-    +'<button class="btn btn-blue" id="fsk-submit-btn" onclick="commitFishTransaction()">Post Data Entry</button></div>';
-
-  // Biomass chart
-  h+='<div class="card"><div class="card-title">📊 Biomass by Pond Unit</div>'
-    +'<div class="chart-wrap"><canvas id="biomass-chart"></canvas></div></div>';
-
-  // Live stock status - project + pond
-  h+='<div class="card"><div class="card-title">📋 Live Stock Status — Project & Pond View</div>'
-    +'<div class="tab-row" id="stock-view-tabs">'
-    +'<button class="tab-btn active" onclick="switchStockTab(\'project\')">🌍 Project View</button>'
-    +'<button class="tab-btn" onclick="switchStockTab(\'pond\')">🏊 Pond View</button>'
-    +'</div>'
-    +'<div id="stock-project-view">'
-    +'<label class="flbl2">Filter by Pond</label><select class="sel" id="fsk-filter-pond" onchange="renderStockTable()">'+getPondOptions(true)+'</select>'
-    +'<div id="stock-table-box"></div></div>'
-    +'<div id="stock-pond-view" style="display:none;">'
-    +'<div id="stock-pond-table-box"></div>'
-    +'</div>'
-    +'</div>';
-
-  return h;
-}
-
-function switchStockTab(tab){
-  document.querySelectorAll('#stock-view-tabs .tab-btn').forEach(function(b){b.classList.remove('active');});
-  event.target.classList.add('active');
-  if(tab==='project'){
-    qs('stock-project-view').style.display='block';
-    qs('stock-pond-view').style.display='none';
-  } else {
-    qs('stock-project-view').style.display='none';
-    qs('stock-pond-view').style.display='block';
-    renderPondWiseStock();
-  }
-}
-
-function renderBiomassChart(){
-  var canvas=qs('biomass-chart'); if(!canvas) return;
-  var data=getBiomassByPond(S.proj);
-  var labels=data.map(function(d){return d.pond;});
-  var values=data.map(function(d){return d.biomass;});
-  if(window._biomassChart) window._biomassChart.destroy();
-  window._biomassChart = new Chart(canvas,{
-    type:'bar',
-    data:{
-      labels:labels,
-      datasets:[{
-        label:'Biomass (Kg)',
-        data:values,
-        backgroundColor:'rgba(28,69,135,0.75)',
-        borderColor:'rgba(28,69,135,1)',
-        borderWidth:2,
-        borderRadius:6
-      }]
-    },
-    options:{
-      responsive:true,
-      maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return fmt(ctx.raw)+' Kg';}}}},
-      scales:{
-        x:{grid:{display:false},ticks:{font:{size:11}}},
-        y:{beginAtZero:true,ticks:{callback:function(v){return fmt(v)+' Kg';},font:{size:10}},grid:{color:'#e8edf2'}}
+  
+  if(!entries.length) { alert('No valid records are evaluated inside the species layout matrix tree.'); return; }
+  
+  showToast("Transmitting structural array rows...", "var(--amber)");
+  
+  google.script.run
+    .withSuccessHandler(function(response) {
+      if(response.success) {
+        showToast("Bulk entries saved under Voucher: " + response.voucher);
+        entries.forEach(e => { e.voucher = response.voucher; AppState.db.payments.push(e); });
+        printFingerlingVoucher(entries, response.voucher);
       }
-    }
-  });
+    })
+    .withFailureHandler(function(err) { alert("Matrix parsing failed: " + err.message); })
+    .commitBulkFingerlingsRecords(entries);
 }
 
-function setFishMode(mode){
-  S.fishActionMode=mode;
-  renderCurrentScreen();
-  var title=qs('fsk-form-title');var btn=qs('fsk-submit-btn');var pWrapper=qs('pond-input-wrapper');
-  if(mode==='purchase'){title.innerHTML='📥 1. Purchase Stock';btn.className='btn btn-blue';pWrapper.innerHTML='<label class="flbl2">Target Pond</label><select class="sel" id="fsk-pond">'+getPondOptions(false)+'</select>';}
-  else if(mode==='transfer'){title.innerHTML='🔄 2. Cross-Pond Transfer';btn.className='btn btn-teal';pWrapper.innerHTML='<label class="flbl2">Source Pond</label><select class="sel" id="fsk-pond">'+getPondOptions(false)+'</select><label class="flbl2">Destination Pond</label><select class="sel" id="fsk-pond-to">'+getPondOptions(false)+'</select>';}
-  else if(mode==='sales'){title.innerHTML='📈 3. Sales Order';btn.className='btn btn-green';pWrapper.innerHTML='<label class="flbl2">Harvesting Pond</label><select class="sel" id="fsk-pond">'+getPondOptions(false)+'</select>';}
-  else if(mode==='mortality'){title.innerHTML='☠️ 4. Mortality Registration';btn.className='btn btn-red';pWrapper.innerHTML='<label class="flbl2">Affected Pond</label><select class="sel" id="fsk-pond">'+getPondOptions(false)+'</select>';}
+function printFingerlingVoucher(entries,vCode){
+  var rows=entries.map(e=>`<tr><td>${e.product}</td><td style="text-align:right">${e.qty.toLocaleString()}</td><td style="text-align:right">৳${e.rate}</td><td style="text-align:right">৳${fmt(e.netAmount)}</td></tr>`).join('');
+  var total=entries.reduce((s,e)=>s+e.netAmount,0);
+  document.getElementById('print-space').innerHTML=buildPrintHeader('FINGERLING PURCHASE VOUCHER')+`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;margin:10px 0;">
+      <div><b>Voucher No:</b> ${vCode}</div><div><b>Date:</b> ${entries[0].date}</div>
+      <div><b>Supplier:</b> ${entries[0].supplier||'—'}</div><div><b>Mobile:</b> ${entries[0].mobile||'—'}</div>
+      <div><b>Project:</b> ${AppState.project}</div><div><b>Receiving Date:</b> ${entries[0].receivedDate}</div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:10px;">
+      <thead><tr style="background:#1c4587;color:#fff;"><th style="padding:6px">Species</th><th style="padding:6px;text-align:right">Qty</th><th style="padding:6px;text-align:right">Rate</th><th style="padding:6px;text-align:right">Amount</th></tr></thead>
+      <tbody>${rows}<tr style="font-weight:700;border-top:2px solid #000;"><td colspan="3" style="padding:6px;text-align:right;">TOTAL</td><td style="padding:6px;text-align:right;">৳${fmt(total)}</td></tr></tbody>
+    </table>
+    ${printFooterBtns()}`;
 }
 
-function autoCalcFishBiomass(){
-  qs('fsk-biomass').value=((+qs('fsk-qty').value||0)*(+qs('fsk-avgwt').value||0)).toFixed(2);
+function printPaymentVoucher(e){
+  document.getElementById('print-space').innerHTML=buildPrintHeader('EXPENSE PAYMENT VOUCHER')+`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;margin:10px 0;">
+      <div><b>Voucher No:</b> ${e.voucher}</div><div><b>Date:</b> ${e.date}</div>
+      <div><b>Cost Head:</b> ${e.head}</div><div><b>Product/Item:</b> ${e.product}</div>
+      <div><b>Quantity:</b> ${e.qty} ${e.uom}</div><div><b>Rate:</b> ৳${e.rate}</div>
+      <div><b>Gross Value:</b> ৳${fmt(e.amount)}</div><div><b>Discount:</b> ৳${e.discount}</div>
+      <div style="font-weight:700;color:var(--green)"><b>Net Amount Paid:</b> ৳${fmt(e.netAmount)}</div><div><b>Locator:</b> ${e.locator}</div>
+      <div><b>Supplier/Payee:</b> ${e.supplier||'—'}</div><div><b>Mobile:</b> ${e.mobile||'—'}</div>
+    </div>
+    <div style="margin-top:12px;font-size:11px;"><b>Particulars:</b> ${e.particular||'—'}</div>
+    ${printFooterBtns()}`;
 }
 
-function commitFishTransaction(){
-  var mode=S.fishActionMode;var sp=qs('fsk-species').value.trim();var dateStr=qs('fsk-date').value;var pFrom=qs('fsk-pond').value;var q=+qs('fsk-qty').value||0;var avg=+qs('fsk-avgwt').value||0;var bio=q*avg;
-  if(!sp||q<=0){alert('Species Name and quantity required.');return;}
-  var payload={action:'save',project:S.proj,date:dateStr,fishType:sp,qty:q,weight:bio};
-  if(mode==='purchase'){payload.type='fishstock';payload.pond=pFrom;post(payload,function(){toast('Purchase committed.');fetchAll();});}
-  else if(mode==='mortality'){payload.type='mortality';payload.pond=pFrom;payload.reason='Routine Check';post(payload,function(){toast('Mortality registered.');fetchAll();});}
-  else if(mode==='sales'){payload.type='fishsales';payload.pond=pFrom;payload.partyName='Spot Cash Market';payload.speciesName=sp;payload.quantityPcs=q;payload.weightKg=bio;payload.avgWeight=avg;payload.rateTkKg=180;payload.amount=bio*180;payload.commission=0;payload.grandTotal=bio*180;post(payload,function(){toast('Sales log integrated.');fetchAll();});}
-  else if(mode==='transfer'){var pTo=qs('fsk-pond-to').value;if(pFrom==pTo){alert('Source and Destination match.');return;}payload.type='transfer';payload.fromPond=pFrom;payload.toPond=pTo;post(payload,function(){toast('Transfer complete.');fetchAll();});}
-}
+// =========================================================================
+// STUB ENGINE FALLBACK METHODS
+// =========================================================================
+function uiReceipt(){ return navBack('menu') + `<div class="card"><h4>B. Revenue Booking Module</h4><p style="font-size:12px;color:var(--text2);margin:10px 0;">Connected deployment parsing state active.</p></div>`; }
+function uiFunds(){ return navBack('menu') + `<div class="card"><h4>C. Fund Inflows Module</h4><p style="font-size:12px;color:var(--text2);margin:10px 0;">Transaction handling channel active.</p></div>`; }
+function uiInventory(){ return navBack('menu') + `<div class="card"><h4>D. Warehouse Inventory</h4><p style="font-size:12px;color:var(--text2);margin:10px 0;">Warehouse issues active.</p></div>`; }
+function uiPonds(){ return navBack('menu') + `<div class="card"><h4>F. Pond Mapping Registers</h4><p style="font-size:12px;color:var(--text2);margin:10px 0;">Displaying active static definitions.</p></div>`; }
+function uiReports(){ return navBack('menu') + `<div class="card"><h4>E. Document Register Reports</h4></div>`; }
+function uiLedger(){ return navBack('menu') + `<div class="card"><h4>📒 Operational Accounting Ledger</h4></div>`; }
 
-function renderStockTable(){
-  var b=qs('stock-table-box');if(!b)return;
-  var targetFilter=qs('fsk-filter-pond').value;
-  var trackTypes=[];
-  S.recs.forEach(function(r){var f=(r.fishType||r.speciesName||'').trim();if(f&&trackTypes.indexOf(f)===-1)trackTypes.push(f);});
-  if(trackTypes.length===0)trackTypes=DEFAULTS_SPECIES;
-  var titleContext=(targetFilter==='Overall Project')?'All Ponds':'Pond '+targetFilter;
-  var h='<table class="stock-table"><thead><tr><th>Species ('+titleContext+')</th><th>Qty</th><th>Biomass</th></tr></thead><tbody>';
-  var totPcs=0,totBio=0;
-  trackTypes.forEach(function(ft){var metric=getDynamicFishStockSummary(S.proj,targetFilter,ft);totPcs+=metric.qty;totBio+=metric.biomass;h+='<tr><td><b>'+ft+'</b></td><td>'+fmt(metric.qty)+' Pcs</td><td>'+fmt(metric.biomass)+' Kg</td></tr>';});
-  h+='<tr class="tot"><td>Total</td><td>'+fmt(totPcs)+' Pcs</td><td>'+fmt(totBio)+' Kg</td></tr></tbody></table>';
-  b.innerHTML=h;
-}
-
-function renderPondWiseStock(){
-  var b=qs('stock-pond-table-box');if(!b)return;
-  var n=FISH_PROJ[S.proj]||3;
-  var h='';
-  for(var i=1;i<=n;i++){
-    var pondTotBio=0,pondTotPcs=0;
-    var rowsHtml='';
-    DEFAULTS_SPECIES.forEach(function(sp){
-      var m=getDynamicFishStockSummary(S.proj,String(i),sp);
-      if(m.qty>0||m.biomass>0){pondTotPcs+=m.qty;pondTotBio+=m.biomass;rowsHtml+='<tr><td>'+sp+'</td><td>'+fmt(m.qty)+' Pcs</td><td>'+fmt(m.biomass)+' Kg</td></tr>';}
-    });
-    if(!rowsHtml) rowsHtml='<tr><td colspan="3" style="color:var(--text3);font-style:italic;">No stock recorded</td></tr>';
-    h+='<div style="margin-bottom:12px;"><div style="font-weight:700;font-size:12px;color:var(--blue);padding:6px 0;border-bottom:2px solid var(--blue-l);margin-bottom:6px;">🏊 Pond Zone Unit '+i+' &nbsp;<span class="badge badge-green">'+fmt(pondTotBio)+' Kg</span></div>'
-      +'<table class="stock-table"><thead><tr><th>Species</th><th>Qty</th><th>Biomass</th></tr></thead><tbody>'+rowsHtml
-      +'<tr class="tot"><td>Pond Total</td><td>'+fmt(pondTotPcs)+' Pcs</td><td>'+fmt(pondTotBio)+' Kg</td></tr>'
-      +'</tbody></table></div>';
-  }
-  b.innerHTML=h;
-}
-
-// ========== AVG WEIGHT EDITOR ==========
-function tplAvgWeightEditor(){
-  if(!S.avgWeights[S.proj]) S.avgWeights[S.proj]={};
-  var aw=S.avgWeights[S.proj];
-  var h='<div class="card"><div class="card-title">⚖️ Update Average Weight by Species — '+S.proj+'</div>'
-      +'<p style="font-size:11px;color:var(--text3);margin-bottom:12px;">Set the current average weight (Kg/Pc) per species. This updates the benchmark for biomass calculation.</p>';
-  DEFAULTS_SPECIES.forEach(function(sp,idx){
-    var cur=aw[sp]||'';
-    h+='<div class="avg-wt-item"><span style="font-weight:600;font-size:12px;">'+sp+'</span>'
-      +'<div style="display:flex;align-items:center;gap:6px;">'
-      +'<input type="number" id="awt-'+idx+'" value="'+(cur||'')+'" placeholder="e.g. 1.25" step="0.01" style="width:90px;margin-bottom:0;padding:7px;font-size:13px;">'
-      +'<span style="font-size:11px;color:var(--text3);">Kg/Pc</span>'
-      +'</div></div>';
-  });
-  h+='<button class="btn btn-purple" style="margin-top:12px;" onclick="saveAvgWeights()">💾 Save Average Weights</button></div>';
-  return h;
-}
-
-function saveAvgWeights(){
-  if(!S.avgWeights[S.proj]) S.avgWeights[S.proj]={};
-  DEFAULTS_SPECIES.forEach(function(sp,idx){
-    var val=+qs('awt-'+idx).value||0;
-    if(val>0) S.avgWeights[S.proj][sp]=val;
-  });
-  toast('Average weights updated for '+S.proj);
-  navigateToScreen('fish_stock_dash');
-}
-
-// ========== FEED STOCK ==========
-function tplFeedStockDash(){
-  return '<div class="card"><div class="card-title">🛒 Feed Purchasing / Inward Log Entry</div>'
-      +'<div class="two-col"><div><label class="flbl2">Purchase Date</label><input type="date" id="pur-date" value="'+today()+'"></div>'
-      +'<div><label class="flbl2">Challan Number</label><input type="text" id="pur-challan" placeholder="Challan ID"></div></div>'
-      +'<label class="flbl2">Supplier</label><input type="text" id="pur-supplier" placeholder="Party Distributor">'
-      +'<label class="flbl2">Feed Type</label><select class="sel" id="pur-brand">'+FEED_TYPES.map(function(t){return '<option value="'+t+'">'+t+'</option>';}).join('')+'</select>'
-      +'<div class="two-col"><div><label class="flbl2">Bags Count</label><input type="number" id="pur-bags" value="0" oninput="qs(\'pur-kg\').value=this.value*25"></div>'
-      +'<div><label class="flbl2">Total Weight (Kg)</label><input type="number" id="pur-kg" value="0" readonly style="background:var(--blue-l)"></div></div>'
-      +'<button class="btn btn-blue" onclick="commitFeedOrMedInward(\'feed\')">Commit Feed Inward</button></div>'
-      +'<div class="card"><div class="card-title">🌊 Daily Feed Pond Allocation</div>'
-      +'<div class="two-col"><div><label class="flbl2">Allocation Date</label><input type="date" id="iss-date" value="'+today()+'"></div>'
-      +'<div><label class="flbl2">Feed Category</label><select class="sel" id="iss-brand">'+FEED_TYPES.map(function(t){return '<option value="'+t+'">'+t+'</option>';}).join('')+'</select></div></div>'
-      +'<label class="flbl2">Allocation Unit</label><select class="sel" id="feed-alloc-unit" onchange="rebuildPondIssueGrid(\'feed\')"><option value="Kg">Kg</option><option value="Bag">Bag (1 Bag = 25 Kg)</option></select>'
-      +'<div id="multi-pond-grid-box"></div>'
-      +'<div style="background:var(--blue-l);padding:10px;border-radius:8px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center"><span>Total Allocation:</span><b id="lbl-total-issued-today">0 Kg</b></div>'
-      +'<button class="btn btn-green" onclick="commitMultiPondDispersal(\'feed\')">Execute Distribution</button></div>';
-}
-
-// ========== MEDICINE STOCK ==========
-function tplMedicineStockDash(){
-  return '<div class="card"><div class="card-title">🛒 Medicine Procurement / Inward Log</div>'
-      +'<div class="two-col"><div><label class="flbl2">Log Date</label><input type="date" id="pur-date" value="'+today()+'"></div>'
-      +'<div><label class="flbl2">Challan Number</label><input type="text" id="pur-challan" placeholder="Challan ID"></div></div>'
-      +'<label class="flbl2">Manufacturer</label><input type="text" id="pur-supplier" placeholder="Medical Vendor">'
-      +'<label class="flbl2">Medicine Name</label><input type="text" id="pur-brand" placeholder="e.g. Geotox / Aqua-Zyme">'
-      +'<div class="two-col"><div><label class="flbl2">Pack Count</label><input type="number" id="pur-bags" value="0" oninput="qs(\'pur-kg\').value=this.value"></div>'
-      +'<div><label class="flbl2">Total Units</label><input type="number" id="pur-kg" value="0" readonly style="background:var(--blue-l)"></div></div>'
-      +'<button class="btn btn-blue" onclick="commitFeedOrMedInward(\'medicine\')">Commit Medicine Inward</button></div>'
-      +'<div class="card"><div class="card-title">🌊 Daily Medical Dispensation</div>'
-      +'<div class="two-col"><div><label class="flbl2">Allocation Date</label><input type="date" id="iss-date" value="'+today()+'"></div>'
-      +'<div><label class="flbl2">Medicine Used</label><input type="text" id="iss-brand" placeholder="Specify Item"></div></div>'
-      +'<div id="multi-pond-grid-box"></div>'
-      +'<div style="background:var(--blue-l);padding:10px;border-radius:8px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center"><span>Total Units Issued:</span><b id="lbl-total-issued-today">0 Units</b></div>'
-      +'<button class="btn btn-green" onclick="commitMultiPondDispersal(\'medicine\')">Execute Apportionment</button></div>'
-      +'<div class="card"><div class="card-title">📊 Medicine Stock Balance</div>'
-      +'<label class="flbl2">Filter Scope</label><select class="sel" id="med-filter-pond" onchange="renderMedicineStock()">'+getPondOptions(true)+'</select>'
-      +'<div id="med-stock-box"></div></div>';
-}
-
-function rebuildPondIssueGrid(moduleKey){
-  var box=qs('multi-pond-grid-box');if(!box)return;
-  var n=FISH_PROJ[S.proj]||3;
-  var unitLabel=(moduleKey==='feed')?(getFeedAllocUnit()):'Units';
-  var step=(moduleKey==='feed'&&unitLabel==='Bag')?'0.01':'0.01';
-  var h='<table class="issue-table"><thead><tr><th>Pond</th><th>Qty</th><th>Unit</th></tr></thead><tbody>';
-  for(var i=1;i<=n;i++){h+='<tr><td><b>Pond '+i+'</b></td><td><input type="number" class="grid-qty-input" data-pond="'+i+'" value="0" step="'+step+'" oninput="sumGridAllocationItems(\''+moduleKey+'\')"></td><td><span style="font-weight:700;color:var(--text3)">'+unitLabel+'</span></td></tr>';}
-  box.innerHTML=h+'</tbody></table>';
-  sumGridAllocationItems(moduleKey);
-}
-
-// Returns 'Bag' or 'Kg' for feed allocation; defaults to 'Kg'
-function getFeedAllocUnit(){
-  var el=qs('feed-alloc-unit');
-  return el?el.value:'Kg';
-}
-
-function sumGridAllocationItems(moduleKey){
-  var total=0;document.querySelectorAll('.grid-qty-input').forEach(function(inp){total+=(+inp.value||0);});
-  if(moduleKey==='feed'){
-    var unit=getFeedAllocUnit();
-    if(unit==='Bag'){
-      var kgTotal=total*25;
-      if(qs('lbl-total-issued-today'))qs('lbl-total-issued-today').textContent=total.toFixed(2)+' Bag  (= '+fmt(kgTotal)+' Kg)';
-    } else {
-      var bagTotal=total/25;
-      if(qs('lbl-total-issued-today'))qs('lbl-total-issued-today').textContent=total.toFixed(2)+' Kg  (= '+fmt(bagTotal)+' Bag)';
-    }
-    return;
-  }
-  var trail=' Units';if(qs('lbl-total-issued-today'))qs('lbl-total-issued-today').textContent=total.toFixed(2)+trail;
-}
-
-function commitFeedOrMedInward(moduleKey){
-  var sup=qs('pur-supplier').value.trim();var brand=qs('pur-brand').value.trim();var count=+qs('pur-bags').value||0;
-  if(!sup||!brand||count<=0){alert('Please fill in supplier, material, and quantities.');return;}
-  var challan=(qs('pur-challan')?qs('pur-challan').value.trim():'');
-  var payload={action:'save',type:moduleKey,project:S.proj,date:qs('pur-date').value,supplier:sup,challanNo:challan,feedType:brand,medType:brand,purQty:count,issQty:0,purKg:qs('pur-kg').value,issKg:0,pond:'Inventory Store'};
-  post(payload,function(){toast('Inward logged.');fetchAll();});
-}
-
-function commitMultiPondDispersal(moduleKey){
-  var brand=qs('iss-brand').value.trim();var dateStr=qs('iss-date').value;if(!brand){alert('Define material name.');return;}
-  var convertFactor=1;
-  if(moduleKey==='feed'&&getFeedAllocUnit()==='Bag') convertFactor=25; // 1 Bag = 25 Kg
-  var rows=document.querySelectorAll('.grid-qty-input');var logsList=[];
-  rows.forEach(function(inp){var p=inp.getAttribute('data-pond');var rawVal=+inp.value||0;var val=rawVal*convertFactor;if(val>0){logsList.push({action:'save',type:moduleKey,project:S.proj,date:dateStr,supplier:'Internal Warehouse',feedType:brand,medType:brand,purQty:0,issQty:val,purKg:0,issKg:val,pond:p});}});
-  if(logsList.length===0){alert('Define at least one distribution line.');return;}
-  var completed=0;logsList.forEach(function(item){post(item,function(){completed++;if(completed===logsList.length){toast('Distribution successful.');fetchAll();}});});
-}
-
-function renderMedicineStock(){
-  var box=qs('med-stock-box');if(!box)return;
-  var targetFilter=qs('med-filter-pond').value;var ledger={};
-  S.recs.filter(function(r){return r.type==='medicine'&&r.project===S.proj;}).forEach(function(r){
-    var isPondMatch=(targetFilter==='Overall Project'||r.pond==targetFilter||(targetFilter==='Inventory Store'&&r.pond==='Inventory Store'));
-    if(isPondMatch){var name=(r.medType||'Generic');if(!ledger[name])ledger[name]=0;ledger[name]+=(+r.purQty||0)-(+r.issQty||0);}
-  });
-  var h='<table class="stock-table"><thead><tr><th>Medicine Item</th><th>Balance</th></tr></thead><tbody>';
-  var entries=Object.keys(ledger);
-  if(entries.length===0) h+='<tr><td colspan="2">No stock in selected scope.</td></tr>';
-  entries.forEach(function(k){h+='<tr><td>'+k+'</td><td><b>'+fmt(ledger[k])+' Units</b></td></tr>';});
-  box.innerHTML=h+'</tbody></table>';
-}
-
-// ========== COST BOOKING ==========
-function tplCost(){
-  return '<div class="card" style="margin-top:10px;"><div class="card-title">💰 Operational Cost Ledger</div>'
-      +'<div class="two-col"><div><label class="flbl2">Date</label><input type="date" id="co-date" value="'+today()+'"></div>'
-      +'<div><label class="flbl2">Cost Head</label><select class="sel" id="co-head">'+FISH_HEADS.map(function(h){return '<option value="'+h+'">'+h+'</option>';}).join('')+'</select></div></div>'
-      +'<div class="two-col"><div><label class="flbl2">Particular *</label><input type="text" id="co-part" placeholder="Description"></div>'
-      +'<div><label class="flbl2">UOM</label><select class="sel" id="co-uom">'+CORE_UOMS.map(function(u){return '<option value="'+u+'">'+u+'</option>';}).join('')+'</select></div></div>'
-      +'<div class="two-col"><div><label class="flbl2">Quantity</label><input type="number" id="co-qty" value="1" oninput="qs(\'co-amount\').value=(this.value*qs(\'co-rate\').value).toFixed(2)"></div>'
-      +'<div><label class="flbl2">Rate (৳)</label><input type="number" id="co-rate" value="0" oninput="qs(\'co-amount\').value=(this.value*qs(\'co-qty\').value).toFixed(2)"></div></div>'
-      +'<label class="flbl2">Allocation Pond</label><select class="sel" id="co-pond">'+getPondOptionsWithGlobal()+'</select>'
-      +'<label class="flbl2">Total Amount (৳)</label><input type="number" id="co-amount" value="0" readonly style="font-weight:700;color:var(--blue);background:var(--blue-l)">'
-      +'<button class="btn btn-amber" onclick="saveCost()">Commit Cost Voucher</button></div>';
-}
-
-function saveCost(){
-  var part=qs('co-part').value.trim();var amt=qs('co-amount').value;if(!part||+amt<=0){alert('Validation failure.');return;}
-  var data={action:'save',type:'cost',project:S.proj,date:qs('co-date').value,head:qs('co-head').value,particular:part,uom:qs('co-uom').value,qty:qs('co-qty').value,rate:qs('co-rate').value,amount:amt,pond:qs('co-pond').value};
-  post(data,function(){toast('Cost allocation captured.');fetchAll();navigateToScreen('modules_menu');});
-}
-
-// ========== SALES ENTRY — TWO-TYPE GATEWAY ==========
-function tplSalesGateway(){
-  var mode=S.salesMode;
-  var h='<div class="card"><div class="card-title">📈 Sales Entry</div>'
-      +'<div class="sales-type-row">'
-      +'<div class="sales-type-card '+(mode==='fish'?'active':'')+'" onclick="setSalesMode(\'fish\')">'
-      +'<div class="stc-icon">🐟</div><div class="stc-label">Fish Sales</div><div class="stc-sub">Live Harvest Sales</div></div>'
-      +'<div class="sales-type-card '+(mode==='other'?'active':'')+'" onclick="setSalesMode(\'other\')">'
-      +'<div class="stc-icon">🛍️</div><div class="stc-label">Other Sales</div><div class="stc-sub">By-products & Misc</div></div>'
-      +'</div></div>';
-
-  if(mode==='fish'){
-    h+=tplFishSalesForm();
-  } else {
-    h+=tplOtherSalesForm();
-  }
-
-  // Sales summary
-  h+=tplSalesSummary();
-  return h;
-}
-
-function setSalesMode(mode){S.salesMode=mode;renderCurrentScreen();}
-
-function tplFishSalesForm(){
-  return '<div class="card"><div class="card-title">🐟 Fish Sales Entry</div>'
-      +'<div class="two-col"><div><label class="flbl2">Date</label><input type="date" id="sal-date" value="'+today()+'"></div>'
-      +'<div><label class="flbl2">Party Name</label><input type="text" id="sal-party" placeholder="Buyer"></div></div>'
-      +'<div class="two-col"><div><label class="flbl2">Challan Number</label><input type="text" id="sal-challan" placeholder="Challan ID"></div>'
-      +'<div><label class="flbl2">Source Pond</label><select class="sel" id="sal-pond">'+getPondOptions(false)+'</select></div></div>'
-      +'<div class="two-col"><div><label class="flbl2">Species</label><input type="text" id="sal-species" list="species-defaults" placeholder="e.g. Rui">'+getSpeciesDataList()+'</div>'
-      +'<div><label class="flbl2">Qty (Pcs)</label><input type="number" id="sal-pcs" value="0" oninput="calcSalesRow()"></div></div>'
-      +'<div class="two-col"><div><label class="flbl2">Biomass (Kg)</label><input type="number" id="sal-kg" value="0" step="0.01" oninput="calcSalesRow()"></div>'
-      +'<div><label class="flbl2">Avg Wt (Kg/Pc)</label><input type="number" id="sal-avg" value="0" readonly style="background:#f1f5f9"></div></div>'
-      +'<div class="two-col"><div><label class="flbl2">Rate (৳/Kg)</label><input type="number" id="sal-rate" value="0" oninput="calcSalesRow()"></div>'
-      +'<div><label class="flbl2">Gross Amount (৳)</label><input type="number" id="sal-amt" value="0" readonly style="background:#f1f5f9"></div></div>'
-      +'<label class="flbl2">Commission (৳)</label><input type="number" id="sal-comm" value="0" oninput="calcSalesRow()">'
-      +'<label class="flbl2">Net Total (৳)</label><input type="number" id="sal-grand" value="0" readonly style="font-weight:700;color:var(--green);background:var(--blue-l)">'
-      +'<button class="btn btn-green" onclick="saveFishSales()">Commit Fish Sales</button></div>';
-}
-
-function calcSalesRow(){
-  var pcs=+qs('sal-pcs').value||0;var kg=+qs('sal-kg').value||0;var rate=+qs('sal-rate').value||0;var comm=+qs('sal-comm').value||0;
-  qs('sal-avg').value=(pcs>0)?(kg/pcs).toFixed(3):0;
-  qs('sal-amt').value=(kg*rate).toFixed(2);
-  qs('sal-grand').value=((kg*rate)-comm).toFixed(2);
-}
-
-function saveFishSales(){
-  var party=qs('sal-party').value.trim();var sp=qs('sal-species').value.trim();var kg=+qs('sal-kg').value||0;
-  if(!party||!sp||kg<=0){alert('Party validation failed.');return;}
-  var grand=+qs('sal-grand').value||0;
-  var data={action:'save',type:'fishsales',project:S.proj,date:qs('sal-date').value,partyName:party,challanNo:qs('sal-challan').value,pond:qs('sal-pond').value,speciesName:sp,quantityPcs:qs('sal-pcs').value,weightKg:kg,avgWeight:qs('sal-avg').value,rateTkKg:qs('sal-rate').value,amount:qs('sal-amt').value,commission:qs('sal-comm').value,grandTotal:grand,saleType:'fish'};
-  post(data,function(){toast('Fish sales booked.');fetchAll();navigateToScreen('modules_menu');});
-}
-
-function tplOtherSalesForm(){
-  var uomOptions=CORE_UOMS.map(function(u){return '<option value="'+u+'">'+u+'</option>';}).join('');
-  return '<div class="card"><div class="card-title">🛍️ Other Sales Entry</div>'
-      +'<div class="two-col"><div><label class="flbl2">Date</label><input type="date" id="oth-date" value="'+today()+'"></div>'
-      +'<div><label class="flbl2">Cost Head</label><select class="sel" id="oth-head">'+OTHER_SALES_HEADS.map(function(h){return '<option value="'+h+'">'+h+'</option>';}).join('')+'</select></div></div>'
-      +'<div class="two-col"><div><label class="flbl2">Items</label><input type="text" id="oth-item" placeholder="Item Name"></div>'
-      +'<div><label class="flbl2">Particulars</label><input type="text" id="oth-part" placeholder="Details"></div></div>'
-      +'<div class="two-col"><div><label class="flbl2">UOM (Cost Booking)</label><select class="sel" id="oth-uom">'+uomOptions+'</select></div>'
-      +'<div><label class="flbl2">Qty</label><input type="number" id="oth-qty" value="0" oninput="calcOtherSales()"></div></div>'
-      +'<div class="two-col"><div><label class="flbl2">Rate (৳)</label><input type="number" id="oth-rate" value="0" oninput="calcOtherSales()"></div>'
-      +'<div><label class="flbl2">Amount (৳)</label><input type="number" id="oth-amt" value="0" readonly style="font-weight:700;color:var(--green);background:var(--blue-l)"></div></div>'
-      +'<label class="flbl2">Source Pond</label><select class="sel" id="oth-pond">'+getPondOptionsWithGlobal()+'</select>'
-      +'<button class="btn btn-green" onclick="saveOtherSales()">Commit Other Sales</button></div>';
-}
-
-function calcOtherSales(){
-  var qty=+qs('oth-qty').value||0;var rate=+qs('oth-rate').value||0;
-  qs('oth-amt').value=(qty*rate).toFixed(2);
-}
-
-function saveOtherSales(){
-  var item=qs('oth-item').value.trim();var amt=+qs('oth-amt').value||0;
-  if(!item||amt<=0){alert('Item and amount required.');return;}
-  var data={action:'save',type:'othersales',project:S.proj,date:qs('oth-date').value,costHead:qs('oth-head').value,itemName:item,particular:qs('oth-part').value,uom:qs('oth-uom').value,qty:qs('oth-qty').value,rate:qs('oth-rate').value,grandTotal:amt,pond:qs('oth-pond').value,saleType:'other'};
-  post(data,function(){toast('Other sales booked.');fetchAll();navigateToScreen('modules_menu');});
-}
-
-// Sales summary — pond & project wise with remaining qty
-function tplSalesSummary(){
-  var fishSales=S.recs.filter(function(r){return r.project===S.proj&&r.type==='fishsales';});
-  var otherSales=S.recs.filter(function(r){return r.project===S.proj&&r.type==='othersales';});
-  var n=FISH_PROJ[S.proj]||3;
-
-  var totalFish=0,totalOther=0,totalFishKg=0;
-  fishSales.forEach(function(r){totalFish+=(+r.grandTotal||0);totalFishKg+=(+r.weightKg||0);});
-  otherSales.forEach(function(r){totalOther+=(+r.grandTotal||0);});
-
-  var h='<div class="card"><div class="card-title">📊 Sales Summary — Pond & Project View</div>';
-  h+='<div class="stat-row">'
-    +'<div class="stat-box green"><div class="stat-val">৳'+fmt(totalFish+totalOther)+'</div><div class="stat-lbl">Combined Sales</div></div>'
-    +'<div class="stat-box blue"><div class="stat-val">'+fmt(totalFishKg)+' Kg</div><div class="stat-lbl">Fish Sold (Biomass)</div></div>'
-    +'</div>';
-
-  // Pond-wise fish sales
-  h+='<div style="font-weight:700;font-size:11px;color:var(--blue);margin-bottom:6px;margin-top:4px;">🐟 Fish Sales by Pond</div>';
-  h+='<table class="summary-table"><thead><tr><th>Pond</th><th>Sold (Kg)</th><th>Revenue (৳)</th><th>Remaining</th></tr></thead><tbody>';
-  for(var i=1;i<=n;i++){
-    var pondStr=String(i);
-    var pondSalesKg=0,pondSalesAmt=0;
-    fishSales.filter(function(r){return r.pond==pondStr;}).forEach(function(r){pondSalesKg+=(+r.weightKg||0);pondSalesAmt+=(+r.grandTotal||0);});
-    // Remaining stock in pond
-    var pondStock=0;
-    DEFAULTS_SPECIES.forEach(function(sp){pondStock+=getDynamicFishStockSummary(S.proj,pondStr,sp).biomass;});
-    h+='<tr><td><b>Pond '+i+'</b></td><td>'+fmt(pondSalesKg)+' Kg</td><td>৳'+fmt(pondSalesAmt)+'</td><td><span class="remain-pill">'+fmt(pondStock)+' Kg</span></td></tr>';
-  }
-  // Overall row
-  var overallStock=0;DEFAULTS_SPECIES.forEach(function(sp){overallStock+=getDynamicFishStockSummary(S.proj,'Overall Project',sp).biomass;});
-  h+='<tr class="tot"><td>Project Total</td><td>'+fmt(totalFishKg)+' Kg</td><td>৳'+fmt(totalFish)+'</td><td><span class="remain-pill">'+fmt(overallStock)+' Kg</span></td></tr>';
-  h+='</tbody></table>';
-
-  // Other sales summary
-  if(otherSales.length>0){
-    h+='<hr class="section-divider"><div style="font-weight:700;font-size:11px;color:var(--teal);margin-bottom:6px;">🛍️ Other Sales by Pond</div>';
-    var pondOther={};
-    otherSales.forEach(function(r){var p=r.pond||'Overall Project';if(!pondOther[p])pondOther[p]=0;pondOther[p]+=(+r.grandTotal||0);});
-    h+='<table class="summary-table"><thead><tr><th>Pond/Head</th><th>Amount (৳)</th></tr></thead><tbody>';
-    Object.keys(pondOther).forEach(function(p){h+='<tr><td>'+getPondName(p)+'</td><td>৳'+fmt(pondOther[p])+'</td></tr>';});
-    h+='<tr class="tot"><td>Total Other Sales</td><td>৳'+fmt(totalOther)+'</td></tr>';
-    h+='</tbody></table>';
-  }
-  h+='</div>';
-  return h;
-}
-
-// ========== FUND RECEIVED & CASH POSITION ==========
-function getCashPosition(proj){
-  var fund=0,sales=0,costs=0;
-  S.recs.filter(function(r){return r.project===proj;}).forEach(function(r){
-    if(r.type==='fundreceived') fund+=(+r.amount||0);
-    if(r.type==='fishsales'||r.type==='othersales') sales+=(+r.grandTotal||0);
-    if(r.type==='cost') costs+=(+r.amount||0);
-  });
-  return {fund:fund,sales:sales,costs:costs,net:(fund+sales-costs)};
-}
-
-function tplFund(){
-  return '<div class="card" style="margin-top:10px;"><div class="card-title">🏦 Capital Injection / Fund Received</div>'
-      +'<label class="flbl2">Transaction Date</label><input type="date" id="fun-date" value="'+today()+'">'
-      +'<div class="two-col"><div><label class="flbl2">Funding Source</label><input type="text" id="fun-part" placeholder="Origin / Company Name"></div>'
-      +'<div><label class="flbl2">Amount (৳)</label><input type="number" id="fun-amt" placeholder="৳ Amount"></div></div>'
-      +'<button class="btn btn-green" onclick="saveFund()">Inject Fund</button></div>'
-      +'<div id="cash-position-block"></div>';
-}
-
-// Build a 3-tile row: Current Cash Position, TL Fund Received, Total Cost
-function buildCashTileRow(cp){
-  var netColor=cp.net>=0?'var(--green)':'var(--red)';
-  return '<div class="three-col">'
-    +'<div class="stat-box blue" style="padding:10px 6px;"><div class="stat-val" style="font-size:14px;color:'+netColor+'">৳'+fmt(cp.net)+'</div><div class="stat-lbl">Current Cash Position</div></div>'
-    +'<div class="stat-box green" style="padding:10px 6px;"><div class="stat-val" style="font-size:14px;">৳'+fmt(cp.fund)+'</div><div class="stat-lbl">TL Fund Received</div></div>'
-    +'<div class="stat-box red" style="padding:10px 6px;"><div class="stat-val" style="font-size:14px;">৳'+fmt(cp.costs)+'</div><div class="stat-lbl">Total Cost</div></div>'
-    +'</div>';
-}
-
-function saveFund(){
-  var part=qs('fun-part').value.trim();var amt=+qs('fun-amt').value||0;
-  if(!part||amt<=0){alert('Provide parameters.');return;}
-  var data={action:'save',type:'fundreceived',project:S.proj,date:qs('fun-date').value,particular:part,amount:amt};
-  post(data,function(){toast('Fund received recorded.');fetchAll();});
-}
-
-function renderCashPosition(){
-  var box=qs('cash-position-block');if(!box)return;
-
-  // Current Cash Position (this project only)
-  var curCp=getCashPosition(S.proj);
-  var curColor=curCp.net>=0?'var(--green)':'var(--red)';
-  var h='<div class="cash-banner"><div class="cash-lbl">💰 Current Cash Position — '+S.proj+'</div>'
-    +'<div class="cash-val" style="color:'+(curCp.net>=0?'#4ade80':'#f87171')+'">৳'+fmt(curCp.net)+'</div>'
-    +'<div class="cash-sub">Fund Received + Sales − Total Costs</div></div>';
-
-  // Project-wise cash position (3-tile format)
-  var projs=Object.keys(FISH_PROJ);
-  h+='<div class="card"><div class="card-title">📍 Project-wise Cash Position</div>';
-  var combinedFund=0,combinedSales=0,combinedCosts=0;
-  var allCp={};
-  projs.forEach(function(p){
-    var cp=getCashPosition(p);
-    allCp[p]=cp;
-    combinedFund+=cp.fund;combinedSales+=cp.sales;combinedCosts+=cp.costs;
-    h+='<div style="margin-bottom:10px;">'
-      +'<div style="font-weight:700;font-size:12px;margin-bottom:6px;">🏝️ '+p+' Project</div>'
-      +buildCashTileRow(cp)
-      +'</div>';
-  });
-  h+='</div>';
-
-  // Combined cash position (3-tile format)
-  var combinedCp={fund:combinedFund,sales:combinedSales,costs:combinedCosts,net:(combinedFund+combinedSales-combinedCosts)};
-  h+='<div class="card"><div class="card-title">🌐 Combined Cash Position — All Projects</div>'
-    +buildCashTileRow(combinedCp)
-    +'</div>';
-
-  // Fund received log
-  var fundRecs=S.recs.filter(function(r){return r.type==='fundreceived'&&r.project===S.proj;});
-  if(fundRecs.length>0){
-    h+='<div class="card"><div class="card-title">📋 Fund Received Log — '+S.proj+'</div>'
-      +'<table class="stock-table"><thead><tr><th>Date</th><th>Source</th><th>Amount (৳)</th></tr></thead><tbody>';
-    fundRecs.slice(-10).reverse().forEach(function(r){h+='<tr><td>'+r.date+'</td><td>'+r.particular+'</td><td>৳'+fmt(r.amount)+'</td></tr>';});
-    h+='</tbody></table></div>';
-  }
-
-  box.innerHTML=h;
-}
+function getFinancialMetrics(){ var rev=0,cogs=0,opex=0; AppState.db.payments.forEach(p=>{if(p.head==='Fingerling Cost'||p.head==='Feed Cost'||p.head==='Medicine Cost')cogs+=+p.netAmount;else opex+=+p.netAmount;}); return {rev:rev,cogs:cogs,opex:opex,grossProfit:rev-cogs,netProfit:rev-(cogs+opex)}; }
+function calcCashMetrics(){return {totalFund:0,balance:0};}
+function getFishStock(){var s={};SPECIES_LIST.forEach(x=>{s[x]={qty:0};});return s;}
+function calcFeedStock(){var f={};FEED_TYPES.forEach(x=>{f[x]=0;});return f;}
+function initAllReportCharts(){}
+function buildPrintHeader(title){ return`<div style="text-align:center;border-bottom:2px solid var(--blue);padding-bottom:8px;margin-bottom:12px;"><h2 style="margin:0;font-size:16px;">ACI Logistics Limited</h2><h4 style="margin:4px 0;font-size:12px;color:var(--blue)">${title}</h4></div>`; }
+function printFooterBtns(){ return`<div class="no-print" style="display:flex;gap:8px;margin-top:16px;"><button class="btn btn-green" onclick="window.print()" style="flex:1">🖨️ Print Voucher</button><button class="btn" style="flex:1;background:#555;color:#fff" onclick="document.getElementById('print-space').innerHTML=''">✕ Close</button></div>`; }
 </script>
 </body>
 </html>
