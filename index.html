@@ -115,30 +115,9 @@ input[readonly]{background:#eceff1;font-weight:600}
 <div class="toast" id="global-toast"></div>
 
 <script>
-// =========================================================================
-function doGet(e) {
-  var action = e.parameter.action;
-  if (action === "getIFMSDatabaseState") {
-    var projectFilter = e.parameter.project || null;
-    var data = getIFMSDatabaseState(projectFilter);
-    return ContentService.createTextOutput(JSON.stringify(data))
-                         .setMimeType(ContentService.MimeType.JSON);
-  }
-}
 
-function doPost(e) {
-  var postData = JSON.parse(e.postData.contents);
-  if (postData.action === "commitPaymentRecord") {
-    var res = commitPaymentRecord(postData.entry);
-    return ContentService.createTextOutput(JSON.stringify(res))
-                         .setMimeType(ContentService.MimeType.JSON);
-  }
-  if (postData.action === "commitBulkFingerlingsRecords") {
-    var res = commitBulkFingerlingsRecords(postData.entries);
-    return ContentService.createTextOutput(JSON.stringify(res))
-                         .setMimeType(ContentService.MimeType.JSON);
-  }
-}
+
+// =========================================================================
 // CONFIG & STATE
 // =========================================================================
 var SPECIES_LIST = ['Bighead','Black Carp','Catla','Foli','Grass Carp','Gulsha','Kalbaus','Mirror Carp (Japani)','Mrigel','Rui','SIFS','Silver Carp'];
@@ -179,7 +158,7 @@ function renderActiveView(){
   setTimeout(function(){ if(v==='reports')initAllReportCharts(); if(v==='dashboard')initDashboardCharts(); },100);
 }
 function navigateTo(t){AppState.view=t;document.getElementById('print-space').innerHTML='';renderActiveView();}
-function selectProject(p){AppState.project=p;AppState.view='menu';renderActiveView();}
+function selectProject(p){AppState.project=p;AppState.view='menu';renderActiveView();loadFromSheet(p);}
 function navBack(t){return`<div class="back-bar no-print"><button class="btn-back" onclick="navigateTo('${t}')">⬅️ Back</button><b style="font-size:12px;color:var(--blue)">📍 ${AppState.project||''}</b></div>`;}
 function today(){return new Date().toISOString().split('T')[0];}
 function showToast(msg,color){
@@ -220,6 +199,7 @@ function uiMenu(){
       <button class="btn btn-blue" style="flex:1;padding:8px;font-size:12px;" onclick="navigateTo('dashboard')">📈 Dashboard</button>
       <button class="btn btn-gray" style="flex:1;padding:8px;font-size:12px;" onclick="navigateTo('ledger')">📒 Ledger</button>
     </div>
+    <button class="btn btn-teal" style="margin-top:8px;" onclick="syncToSheet()">☁️ Sync to Google Sheet</button>
   </div>`;
 }
 
@@ -453,6 +433,7 @@ function submitFingerlingEntry(){
   });
   if(!entries.length){alert('No valid rows to save.');return;}
   AppState.db.payments.push(...entries);
+  entries.forEach(e => appendToSheet('payments', e));
   showToast('Fingerling purchase saved — '+entries.length+' species');
   printFingerlingVoucher(entries,voucher);
 }
@@ -489,6 +470,7 @@ function submitPaymentEntry(){
   var gross=+document.getElementById('p-gross').value;
   var entry={project:AppState.project,date:document.getElementById('p-date').value,receivedDate:document.getElementById('p-rcvd-date').value,challanNo:document.getElementById('p-challan').value,head:h,product:prod,particular:document.getElementById('p-part').value,uom:document.getElementById('p-uom').value,qty:q,rate:r,amount:gross,discount:+(document.getElementById('p-disc')||{}).value||0,netAmount:net,supplier:sup,mobile:mob,locator:loc,type:'cost',voucher};
   AppState.db.payments.push(entry);
+  appendToSheet('payments', entry);
   showToast('Payment saved successfully!');
   printPaymentVoucher(entry);
 }
@@ -819,6 +801,7 @@ function submitReceipt(action){
   var base={project:AppState.project,date:document.getElementById('r-date').value,partyName:party,mobile:document.getElementById('r-mobile').value,address:document.getElementById('r-address').value,reference:document.getElementById('r-ref').value,voucher,type:'revenue',status:'completed'};
   var entries=AppState.cart.map(i=>Object.assign({},base,i));
   AppState.db.receipts.push(...entries);
+  entries.forEach(e => appendToSheet('receipts', e));
   showToast('Revenue booking completed!');
   AppState.cart=[];
   renderActiveView();
@@ -977,6 +960,7 @@ function submitFundInflow(){
   var voucher=document.getElementById('f-voucher').value;
   var entry={project:AppState.project,date:document.getElementById('f-date').value,iouNo:document.getElementById('f-iou').value,voucher,source:document.getElementById('f-source').value,particular:document.getElementById('f-part').value,amount:amt,interestRate:0.14,mode:document.getElementById('f-mode').value,referenceNo:document.getElementById('f-ref-no').value,type:'capital'};
   AppState.db.funds.push(entry);
+  appendToSheet('funds', entry);
   showToast('Fund entry saved!');
   document.getElementById('fund-summary-box').innerHTML=renderFundSummary();
   printFundVoucher(entry);
@@ -1179,7 +1163,12 @@ function submitMultiFeedIssue(){
     var chk=document.getElementById('fi-chk-'+i);
     if(chk&&chk.checked){
       var qty=+document.getElementById('fi-qty-'+i).value||0;
-      if(qty>0){AppState.db.feed_issues.push({project:AppState.project,date,pond:p.pond,feedType,qtyKg:qty,type:'feed_issue'});issued+=qty;count++;}
+      if(qty>0){
+        var rec={project:AppState.project,date,pond:p.pond,feedType,qtyKg:qty,type:'feed_issue'};
+        AppState.db.feed_issues.push(rec);
+        appendToSheet('feed_issues', rec);
+        issued+=qty;count++;
+      }
     }
   });
   if(!count){alert('Please tick at least one pond and enter quantity.');return;}
@@ -1291,7 +1280,12 @@ function submitMultiMedIssue(){
     if(chk&&chk.checked){
       var qty=+document.getElementById('mi-qty-'+i).value||0;
       var uom=document.getElementById('mi-uom-'+i).value;
-      if(qty>0){AppState.db.medicine_issues.push({project:AppState.project,date,pond:p.pond,medType,qty,uom,type:'medicine_issue'});count++;}
+      if(qty>0){
+        var rec={project:AppState.project,date,pond:p.pond,medType,qty,uom,type:'medicine_issue'};
+        AppState.db.medicine_issues.push(rec);
+        appendToSheet('medicine_issues', rec);
+        count++;
+      }
     }
   });
   if(!count){alert('Please tick at least one pond and enter quantity.');return;}
@@ -1334,10 +1328,12 @@ function printMultiMedIssueNote(){
 
 function submitMovement(){
   AppState.db.fish_movement.push({project:AppState.project,date:document.getElementById('mv-date').value,species:document.getElementById('mv-species').value,qty:+document.getElementById('mv-qty').value||0,weight:+document.getElementById('mv-wt').value||0,fromPond:document.getElementById('mv-from').value,toPond:document.getElementById('mv-to').value,type:'movement'});
+  appendToSheet('fish_movement', AppState.db.fish_movement[AppState.db.fish_movement.length-1]);
   showToast('Transfer recorded!');renderActiveView();
 }
 function submitMortality(){
   AppState.db.mortality.push({project:AppState.project,date:document.getElementById('mort-date').value,pond:document.getElementById('mort-pond').value,species:document.getElementById('mort-species').value,qty:+document.getElementById('mort-qty').value||0,weight:+document.getElementById('mort-wt').value||0,type:'mortality'});
+  appendToSheet('mortality', AppState.db.mortality[AppState.db.mortality.length-1]);
   showToast('Mortality recorded!');renderActiveView();
 }
 
@@ -1731,8 +1727,97 @@ function printFooterBtns(){
 }
 
 // =========================================================================
-// SEED DATA
+// GOOGLE APPS SCRIPT (GAS) INTEGRATION
 // =========================================================================
+var IFMS_CONFIG = {
+  GAS_URL: 'https://script.google.com/macros/s/1f8tzAr8TlvcsoeHnfn152hHD8F_A5Hb2OjDTm4qmGCU/exec'
+};
+
+async function syncToSheet() {
+  if (!AppState.project) { showToast('Select a project first.', 'var(--amber)'); return; }
+  showToast('Syncing to Google Sheet…', 'var(--blue)');
+  try {
+    var res = await fetch(IFMS_CONFIG.GAS_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'sync', project: AppState.project, data: AppState.db })
+    });
+    var json = await res.json();
+    if (json.status === 'ok') {
+      showToast('✅ Synced to Google Sheet!', 'var(--green)');
+    } else {
+      showToast('❌ Sync failed: ' + json.message, 'var(--red)');
+    }
+  } catch (e) {
+    showToast('❌ Network error: ' + e.message, 'var(--red)');
+  }
+}
+
+async function appendToSheet(table, record) {
+  if (!AppState.project || !IFMS_CONFIG.GAS_URL.includes('script.google.com')) return;
+  try {
+    await fetch(IFMS_CONFIG.GAS_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'append', project: AppState.project, table: table, record: record })
+    });
+  } catch (e) {
+    console.warn('appendToSheet failed (will sync later):', e.message);
+  }
+}
+
+async function loadFromSheet(project) {
+  if (!IFMS_CONFIG.GAS_URL.includes('script.google.com')) return;
+  showToast('Loading data from Google Sheet…', 'var(--blue)');
+  try {
+    var url = IFMS_CONFIG.GAS_URL + '?project=' + encodeURIComponent(project);
+    var res = await fetch(url);
+    var json = await res.json();
+    if (json.status === 'ok' && json.data) {
+      var d = json.data;
+      AppState.db.payments        = (d.payments        || []).map(sheetRowToPayment);
+      AppState.db.receipts        = (d.receipts        || []).map(sheetRowToReceipt);
+      AppState.db.funds           = (d.funds           || []).map(sheetRowToFund);
+      AppState.db.fish_movement   = (d.fish_movement   || []).map(sheetRowToMovement);
+      AppState.db.mortality       = (d.mortality       || []).map(sheetRowToMortality);
+      AppState.db.feed_issues     = (d.feed_issues     || []).map(sheetRowToFeedIssue);
+      AppState.db.medicine_issues = (d.medicine_issues || []).map(sheetRowToMedIssue);
+      var sheetPonds = (d.ponds || []).map(sheetRowToPond).filter(function(p){return p.project && p.pond;});
+      if (sheetPonds.length > 0) AppState.db.ponds = sheetPonds;
+      showToast('✅ Data loaded from Google Sheet!', 'var(--green)');
+      renderActiveView();
+    } else {
+      showToast('Sheet empty or error — starting fresh.', 'var(--amber)');
+    }
+  } catch (e) {
+    showToast('⚠️ Could not load from Sheet: ' + e.message, 'var(--amber)');
+  }
+}
+
+function sheetRowToPayment(r) {
+  return { project:r['Project'], date:r['Date'], receivedDate:r['Received Date'], challanNo:r['Challan No'], head:r['Cost Head'], product:r['Product'], particular:r['Particulars'], uom:r['UOM'], qty:+r['Qty']||0, rate:+r['Rate']||0, amount:+r['Gross Amount']||0, discount:+r['Discount']||0, netAmount:+r['Net Amount']||0, supplier:r['Supplier'], mobile:r['Mobile'], locator:r['Locator'], type:r['Type'], voucher:r['Voucher'] };
+}
+function sheetRowToReceipt(r) {
+  return { project:r['Project'], date:r['Date'], partyName:r['Party Name'], mobile:r['Mobile'], address:r['Address'], reference:r['Reference'], saleType:r['Sale Type'], product:r['Product'], pond:r['Pond'], pcs:+r['Pcs']||0, actualQty:+r['Actual Qty (Kg)']||0, discountQty:+r['Discount Qty']||0, salesQty:+r['Sales Qty (Kg)']||0, rate:+r['Rate']||0, commission:+r['Commission']||0, amount:+r['Amount']||0, grandTotal:+r['Grand Total']||0, type:r['Type'], status:r['Status'], voucher:r['Voucher'] };
+}
+function sheetRowToFund(r) {
+  return { project:r['Project'], date:r['Date'], iouNo:r['IOU No'], source:r['Source'], particular:r['Particulars'], amount:+r['Amount']||0, interestRate:+r['Interest Rate']||0.14, mode:r['Mode'], referenceNo:r['Reference No'], type:r['Type'], voucher:r['Voucher'] };
+}
+function sheetRowToMovement(r) {
+  return { project:r['Project'], date:r['Date'], species:r['Species'], qty:+r['Qty (Pcs)']||0, weight:+r['Weight (Kg)']||0, fromPond:r['From Pond'], toPond:r['To Pond'], type:r['Type'] };
+}
+function sheetRowToMortality(r) {
+  return { project:r['Project'], date:r['Date'], pond:r['Pond'], species:r['Species'], qty:+r['Dead Count (Pcs)']||0, weight:+r['Est. Weight (Kg)']||0, type:r['Type'] };
+}
+function sheetRowToFeedIssue(r) {
+  return { project:r['Project'], date:r['Date'], pond:r['Pond'], feedType:r['Feed Type'], qtyKg:+r['Qty Issued (Kg)']||0, type:r['Type'] };
+}
+function sheetRowToMedIssue(r) {
+  return { project:r['Project'], date:r['Date'], pond:r['Pond'], medType:r['Medicine'], qty:+r['Qty']||0, uom:r['UOM'], type:r['Type'] };
+}
+function sheetRowToPond(r) {
+  return { project:r['Project'], pond:r['Pond Name'], bigha:+r['Size (Bigha)']||0 };
+}
+
+
 AppState.db.ponds=[
   {project:'Durgapur',pond:'Pond 01',bigha:14},{project:'Durgapur',pond:'Pond 02',bigha:12},
   {project:'Durgapur',pond:'Pond 03',bigha:8},{project:'Durgapur',pond:'Pond 04',bigha:1},
