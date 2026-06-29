@@ -402,11 +402,11 @@ function addFingerlingRow(){
     <div class="three-col">
       <div><label class="lbl-f">Fish Species</label><select class="fr-species">${sOpts}</select></div>
       <div><label class="lbl-f">Pond Locator</label><select class="fr-pond"><option value="Project">Project Level</option>${pOpts}</select></div>
-      <div><label class="lbl-f">Unit</label><input type="text" class="fr-uom" value="Pcs"></div>
+      <div><label class="lbl-f">Qty in Pcs</label><input type="number" class="fr-qty-pcs" value="0" min="0" placeholder="Pcs"></div>
     </div>
     <div class="three-col">
-      <div><label class="lbl-f">Quantity</label><input type="number" class="fr-qty" value="0" oninput="calcFRow(this)"></div>
-      <div><label class="lbl-f">Rate/Pcs (Tk)</label><input type="number" class="fr-rate" value="0" oninput="calcFRow(this)"></div>
+      <div><label class="lbl-f">Qty in Weight <span style="font-size:10px;color:var(--blue)">UOM: kg</span></label><input type="number" class="fr-qty" value="0" min="0" step="0.01" oninput="calcFRow(this)" placeholder="kg"></div>
+      <div><label class="lbl-f">Rate per Kg (Tk)</label><input type="number" class="fr-rate" value="0" min="0" step="0.01" oninput="calcFRow(this)"></div>
       <div><label class="lbl-f">Amount (Tk)</label><input type="number" class="fr-amt" readonly value="0"></div>
     </div>
     <div><label class="lbl-f">Particulars</label><input type="text" class="fr-part" placeholder="Notes..."></div>`;
@@ -428,17 +428,46 @@ function submitFingerlingEntry(){
   var voucher=document.getElementById('p-voucher').textContent;
   var rows=document.querySelectorAll('.fingerling-row'),entries=[];
   rows.forEach(r=>{
-    var qty=+r.querySelector('.fr-qty').value||0,rate=+r.querySelector('.fr-rate').value||0;
-    if(qty>0&&rate>0)entries.push({project:AppState.project,date,receivedDate:rcvdDate,challanNo:challan,head:'Fingerling Cost',product:r.querySelector('.fr-species').value,particular:r.querySelector('.fr-part').value,uom:r.querySelector('.fr-uom').value,qty,rate,amount:qty*rate,netAmount:qty*rate,supplier:party,mobile,locator:r.querySelector('.fr-pond').value,type:'cost',voucher});
+    var qtyPcs=+r.querySelector('.fr-qty-pcs').value||0;
+    var qtyKg=+r.querySelector('.fr-qty').value||0;
+    var rateKg=+r.querySelector('.fr-rate').value||0;
+    var amount=qtyKg*rateKg;
+    if(qtyKg>0&&rateKg>0)entries.push({project:AppState.project,date,receivedDate:rcvdDate,challanNo:challan,head:'Fingerling Cost',product:r.querySelector('.fr-species').value,particular:r.querySelector('.fr-part').value,uom:'kg',qtyPcs,qty:qtyKg,rate:rateKg,amount,netAmount:amount,supplier:party,mobile,locator:r.querySelector('.fr-pond').value,type:'cost',voucher});
   });
-  if(!entries.length){alert('No valid rows to save.');return;}
+  if(!entries.length){alert('No valid rows to save. Please enter Qty in Weight and Rate per Kg.');return;}
   AppState.db.payments.push(...entries);
   entries.forEach(e => appendToSheet('payments', e));
-  showToast('Fingerling purchase saved — '+entries.length+' species');
-  printFingerlingVoucher(entries,voucher);
+  showFingerlingSubmitModal(entries,voucher);
+}
+function showFingerlingSubmitModal(entries,voucher){
+  var total=entries.reduce((s,e)=>s+e.netAmount,0);
+  var speciesSummary=entries.map(e=>`<tr><td style="padding:5px 8px;">${e.product}</td><td style="padding:5px 8px;text-align:right;">${e.qtyPcs||0} pcs</td><td style="padding:5px 8px;text-align:right;">${e.qty} kg</td><td style="padding:5px 8px;text-align:right;">৳${e.rate}/kg</td><td style="padding:5px 8px;text-align:right;font-weight:700;">৳${fmt(e.netAmount)}</td></tr>`).join('');
+  var modal=document.createElement('div');
+  modal.id='fg-submit-modal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:center;justify-content:center;';
+  modal.innerHTML=`<div style="background:#fff;border-radius:14px;padding:28px 24px;max-width:520px;width:95%;box-shadow:0 8px 32px rgba(0,0,0,0.22);">
+    <div style="text-align:center;margin-bottom:16px;">
+      <div style="font-size:40px;">✅</div>
+      <h3 style="margin:8px 0 4px;color:#1c4587;font-size:18px;">Fingerling Purchase Saved!</h3>
+      <div style="color:#555;font-size:13px;">Voucher: <b>${voucher}</b> &nbsp;|&nbsp; ${entries[0].date}</div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:14px;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;">
+      <thead><tr style="background:#1c4587;color:#fff;"><th style="padding:6px 8px;text-align:left;">Species</th><th style="padding:6px 8px;text-align:right;">Pcs</th><th style="padding:6px 8px;text-align:right;">Weight(kg)</th><th style="padding:6px 8px;text-align:right;">Rate/kg</th><th style="padding:6px 8px;text-align:right;">Amount</th></tr></thead>
+      <tbody>${speciesSummary}<tr style="background:#e8f0fe;font-weight:700;border-top:2px solid #1c4587;"><td colspan="4" style="padding:7px 8px;text-align:right;">TOTAL</td><td style="padding:7px 8px;text-align:right;color:#1c4587;">৳${fmt(total)}</td></tr></tbody>
+    </table>
+    <div style="display:flex;gap:10px;justify-content:center;">
+      <button onclick="document.getElementById('fg-submit-modal').remove();printFingerlingVoucher(window._fgEntries,window._fgVoucher);" style="background:#1c4587;color:#fff;border:none;border-radius:8px;padding:10px 22px;font-size:14px;cursor:pointer;font-weight:600;">🖨️ Print Voucher</button>
+      <button onclick="document.getElementById('fg-submit-modal').remove();resetPaymentForm();" style="background:#2e7d32;color:#fff;border:none;border-radius:8px;padding:10px 22px;font-size:14px;cursor:pointer;font-weight:600;">➕ New Entry</button>
+    </div>
+  </div>`;
+  window._fgEntries=entries; window._fgVoucher=voucher;
+  document.body.appendChild(modal);
+}
+function resetPaymentForm(){
+  navigateTo('payment');
 }
 function printFingerlingVoucher(entries,vCode){
-  var rows=entries.map(e=>`<tr><td>${e.product}</td><td style="text-align:right">${e.qty.toLocaleString()}</td><td style="text-align:right">৳${e.rate}</td><td style="text-align:right">৳${fmt(e.netAmount)}</td></tr>`).join('');
+  var rows=entries.map(e=>`<tr><td style="padding:6px">${e.product}</td><td style="padding:6px;text-align:right">${(e.qtyPcs||0).toLocaleString()} pcs</td><td style="padding:6px;text-align:right">${e.qty} kg</td><td style="padding:6px;text-align:right">৳${e.rate}/kg</td><td style="padding:6px;text-align:right">৳${fmt(e.netAmount)}</td></tr>`).join('');
   var total=entries.reduce((s,e)=>s+e.netAmount,0);
   document.getElementById('print-space').innerHTML=buildPrintHeader('FINGERLING PURCHASE VOUCHER')+`
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;margin:10px 0;">
@@ -447,8 +476,8 @@ function printFingerlingVoucher(entries,vCode){
       <div><b>Project:</b> ${AppState.project}</div><div><b>Receiving Date:</b> ${entries[0].receivedDate}</div>
     </div>
     <table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:10px;">
-      <thead><tr style="background:#1c4587;color:#fff;"><th style="padding:6px">Species</th><th style="padding:6px;text-align:right">Qty</th><th style="padding:6px;text-align:right">Rate</th><th style="padding:6px;text-align:right">Amount</th></tr></thead>
-      <tbody>${rows}<tr style="font-weight:700;border-top:2px solid #000;"><td colspan="3" style="padding:6px;text-align:right;">TOTAL</td><td style="padding:6px;text-align:right;">৳${fmt(total)}</td></tr></tbody>
+      <thead><tr style="background:#1c4587;color:#fff;"><th style="padding:6px">Species</th><th style="padding:6px;text-align:right">Qty (Pcs)</th><th style="padding:6px;text-align:right">Qty (kg)</th><th style="padding:6px;text-align:right">Rate/kg</th><th style="padding:6px;text-align:right">Amount</th></tr></thead>
+      <tbody>${rows}<tr style="font-weight:700;border-top:2px solid #000;"><td colspan="4" style="padding:6px;text-align:right;">TOTAL</td><td style="padding:6px;text-align:right;">৳${fmt(total)}</td></tr></tbody>
     </table>
     ${printFooterBtns()}`;
 }
