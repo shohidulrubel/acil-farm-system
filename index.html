@@ -121,9 +121,19 @@ input[readonly]{background:#eceff1;font-weight:600}
 // CONFIG & STATE
 // =========================================================================
 var SPECIES_LIST = ['Bighead','Black Carp','Catla','Foli','Grass Carp','Gulsha','Kalbaus','Mirror Carp (Japani)','Mrigel','Rui','SIFS','Silver Carp'];
-var EXP_HEADS = ['Lease Value','Feed Cost','Labor Cost','Medicine Cost','Transport Cost','Harvesting Cost','Electricity & Water Supply','Fingerling Cost','Maintenance','Pond Management'];
+function buildSpeciesOptions(){ return SPECIES_LIST.map(s=>`<option value="${s}">${s}</option>`).join('')+'<option value="User Define">➕ User Define (Other)</option>'; }
+function getSpeciesValue(selectId, customId){
+  var sel=document.getElementById(selectId);
+  if(!sel) return '';
+  if(sel.value==='User Define'){
+    var custom=(document.getElementById(customId)||{}).value||'';
+    return custom.trim()||'User Define';
+  }
+  return sel.value;
+}
+var EXP_HEADS = ['Lease Value','Feed Cost','Labor Cost','Medicine Cost','Transport Cost','Harvesting Cost','Electricity & Water Supply','Fingerling Cost','Shed Cost','Maintenance','Pond Management'];
 var MED_LIST = ["All Cleared","Aquakleen","Biokill","BKC","Ciproflox","Deltamethrine","Fenfen","Genabel","Germo-heat","Germo-nil","Ivermectin 3%","Krilcord","Lime","ParaCefvet","Potassium","Potassium Permanganate","TH-5 BKC","Vitamin-C","Yucca","Zeolight","Others"];
-var FEED_TYPES = ['Carp Grower Floating','Carp Grower Sinking','Mixed Feed'];
+var FEED_TYPES = ['Carp Grower Floating','Carp Grower Sinking','Mixed Feed','User Define'];
 var NO_DISCOUNT_HEADS = ['Lease Value','Labor Cost','Transport Cost','Harvesting Cost','Electricity & Water Supply'];
 var GSTORE_HEADS = ['Feed Cost','Medicine Cost'];
 var voucherCounter = {pay:1000,rec:2000,fund:3000};
@@ -393,16 +403,19 @@ function calcPaymentTotals(){
 function addFingerlingRow(){
   var ponds=AppState.db.ponds.filter(p=>p.project===AppState.project);
   var pOpts=ponds.map(p=>`<option value="${p.pond}">${p.pond}</option>`).join('');
-  var sOpts=SPECIES_LIST.map(s=>`<option value="${s}">${s}</option>`).join('');
+  var sOpts=buildSpeciesOptions();
   var container=document.getElementById('fingerling-rows-container');
   var rowId='fr-'+Date.now();
   var div=document.createElement('div');
   div.className='fingerling-row'; div.id=rowId;
   div.innerHTML=`<button class="remove-row-btn" onclick="document.getElementById('${rowId}').remove();updateFingerlingTotals()">✕</button>
     <div class="three-col">
-      <div><label class="lbl-f">Fish Species</label><select class="fr-species">${sOpts}</select></div>
+      <div><label class="lbl-f">Fish Species</label><select class="fr-species" onchange="toggleRowSpeciesCustom(this)">${sOpts}</select></div>
       <div><label class="lbl-f">Pond Locator</label><select class="fr-pond"><option value="Project">Project Level</option>${pOpts}</select></div>
       <div><label class="lbl-f">Qty in Pcs</label><input type="number" class="fr-qty-pcs" value="0" min="0" placeholder="Pcs"></div>
+    </div>
+    <div class="fr-species-custom-box" style="display:none;margin-bottom:6px;">
+      <label class="lbl-f">Custom Species Name</label><input type="text" class="fr-species-custom" placeholder="Enter species name">
     </div>
     <div class="three-col">
       <div><label class="lbl-f">Qty in Weight <span style="font-size:10px;color:var(--blue)">UOM: kg</span></label><input type="number" class="fr-qty" value="0" min="0" step="0.01" oninput="calcFRow(this)" placeholder="kg"></div>
@@ -411,6 +424,19 @@ function addFingerlingRow(){
     </div>
     <div><label class="lbl-f">Particulars</label><input type="text" class="fr-part" placeholder="Notes..."></div>`;
   container.appendChild(div); updateFingerlingTotals();
+}
+function toggleRowSpeciesCustom(sel){
+  var row=sel.closest('.fingerling-row');
+  var box=row.querySelector('.fr-species-custom-box');
+  if(box) box.style.display=(sel.value==='User Define')?'block':'none';
+}
+function getRowSpeciesValue(row){
+  var sel=row.querySelector('.fr-species');
+  if(sel.value==='User Define'){
+    var custom=row.querySelector('.fr-species-custom');
+    return (custom&&custom.value.trim())||'User Define';
+  }
+  return sel.value;
 }
 function calcFRow(el){var row=el.closest('.fingerling-row');row.querySelector('.fr-amt').value=(+row.querySelector('.fr-qty').value||0)*(+row.querySelector('.fr-rate').value||0);updateFingerlingTotals();}
 function updateFingerlingTotals(){
@@ -432,7 +458,7 @@ function submitFingerlingEntry(){
     var qtyKg=+r.querySelector('.fr-qty').value||0;
     var rateKg=+r.querySelector('.fr-rate').value||0;
     var amount=qtyKg*rateKg;
-    if(qtyKg>0&&rateKg>0)entries.push({project:AppState.project,date,receivedDate:rcvdDate,challanNo:challan,head:'Fingerling Cost',product:r.querySelector('.fr-species').value,particular:r.querySelector('.fr-part').value,uom:'kg',qtyPcs,qty:qtyKg,rate:rateKg,amount,netAmount:amount,supplier:party,mobile,locator:r.querySelector('.fr-pond').value,type:'cost',voucher});
+    if(qtyKg>0&&rateKg>0)entries.push({project:AppState.project,date,receivedDate:rcvdDate,challanNo:challan,head:'Fingerling Cost',product:getRowSpeciesValue(r),particular:r.querySelector('.fr-part').value,uom:'kg',qtyPcs,qty:qtyKg,rate:rateKg,amount,netAmount:amount,supplier:party,mobile,locator:r.querySelector('.fr-pond').value,type:'cost',voucher});
   });
   if(!entries.length){alert('No valid rows to save. Please enter Qty in Weight and Rate per Kg.');return;}
   AppState.db.payments.push(...entries);
@@ -504,13 +530,19 @@ function submitPaymentEntry(){
   printPaymentVoucher(entry);
 }
 function printPaymentVoucher(e){
-  document.getElementById('print-space').innerHTML=buildPrintHeader('EXPENSE PAYMENT VOUCHER')+`
+  document.getElementById('print-space').innerHTML=buildPrintHeader('PAYMENT VOUCHER — BACKWARD LINKAGE PROGRAM')+`
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;margin:10px 0;">
       <div><b>Voucher No:</b> ${e.voucher}</div><div><b>Date:</b> ${e.date}</div>
       <div><b>Receiving Date:</b> ${e.receivedDate}</div><div><b>Challan No:</b> ${e.challanNo||'N/A'}</div>
       <div><b>Cost Head:</b> ${e.head}</div><div><b>Product:</b> ${e.product}</div>
       <div><b>Particulars:</b> ${e.particular||'—'}</div><div><b>Locator:</b> ${e.locator}</div>
-      <div><b>Supplier:</b> ${e.supplier||'—'}</div><div><b>Mobile:</b> ${e.mobile||'—'}</div>
+      <div><b>Project Name:</b> ${AppState.project}</div><div></div>
+    </div>
+    <div style="background:#f0f4f8;border-radius:6px;padding:10px;margin-bottom:10px;font-size:12px;">
+      <b style="display:block;margin-bottom:4px;color:#1c4587;">SUPPLIER INFORMATION</b>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
+        <div><b>Name:</b> ${e.supplier||'—'}</div><div><b>Mobile:</b> ${e.mobile||'—'}</div>
+      </div>
     </div>
     <table style="width:100%;border-collapse:collapse;font-size:12px;">
       <tr style="background:#f0f4f8;"><th style="padding:6px">Unit</th><th style="padding:6px;text-align:right">Qty</th><th style="padding:6px;text-align:right">Rate</th><th style="padding:6px;text-align:right">Gross</th><th style="padding:6px;text-align:right">Net Amount</th></tr>
@@ -529,7 +561,7 @@ var revDrafts = {}; // key=draftKey, value={partyInfo, cart}
 function uiReceipt(){
   var ponds=AppState.db.ponds.filter(p=>p.project===AppState.project);
   var pOpts=ponds.map(p=>`<option value="${p.pond}">${p.pond}</option>`).join('');
-  var fOpts=SPECIES_LIST.map(s=>`<option value="${s}">${s}</option>`).join('');
+  var fOpts=buildSpeciesOptions();
   var prevReceipts=(AppState.db.receipts||[]).filter(r=>r.project===AppState.project);
   var prevBar=prevReceipts.length>0?`<div class="prev-entry-bar">
     <span>📝 Last: <b>${prevReceipts[prevReceipts.length-1].product}</b> — ৳${fmt(prevReceipts[prevReceipts.length-1].grandTotal)} on ${prevReceipts[prevReceipts.length-1].date}</span>
@@ -585,9 +617,12 @@ function uiReceipt(){
       <div style="background:#f7f9fa;padding:10px;border-radius:8px;margin-bottom:8px;border:1px solid #cfd8dc;">
         <b style="font-size:12px;color:var(--blue);">🐟 Add Fish Line Item</b>
         <div class="three-col">
-          <div><label class="lbl-f">Fish Species</label><select id="r-f-species">${fOpts}</select></div>
+          <div><label class="lbl-f">Fish Species</label><select id="r-f-species" onchange="toggleSalesSpeciesCustom()">${fOpts}</select></div>
           <div><label class="lbl-f">Source Pond</label><select id="r-f-pond"><option value="Overall Project">Overall Project</option>${pOpts}</select></div>
           <div><label class="lbl-f">Particulars</label><input type="text" id="r-f-part" placeholder="Notes"></div>
+        </div>
+        <div id="r-f-species-custom-box" style="display:none;margin-bottom:6px;">
+          <label class="lbl-f">Custom Species Name</label><input type="text" id="r-f-species-custom" placeholder="Enter species name">
         </div>
         <!-- Pcs field always shown -->
         <div class="two-col">
@@ -599,10 +634,10 @@ function uiReceipt(){
           <div style="background:#fff3cd;border:1px solid var(--amber);border-radius:6px;padding:8px;margin:6px 0;">
             <b style="font-size:11px;color:var(--amber);">🎁 Discount Rule (In Kg)</b>
             <div class="two-col" style="margin-top:4px;">
-              <div><label class="lbl-f">Free Qty per 40 Kg (default 5)</label><input type="number" id="r-f-free-per-40" value="5" oninput="calcSalesRow()" min="0"></div>
+              <div><label class="lbl-f">Discount per 40 Kg (default 5)</label><input type="number" id="r-f-free-per-40" value="5" oninput="calcSalesRow()" min="0"></div>
               <div><label class="lbl-f">Discount Qty (Auto)</label><input type="number" id="r-f-dqty" readonly value="0" style="background:#eceff1;color:var(--amber);font-weight:700;"></div>
             </div>
-            <p style="font-size:10px;color:var(--text2);margin-top:2px;">Formula: INT(ActualQty ÷ 40) × FreeQty</p>
+            <p style="font-size:10px;color:var(--text2);margin-top:2px;">Formula: Sales Qty = (Actual Qty ÷ (40 + Discount)) × 40</p>
           </div>
         </div>
         <div class="two-col">
@@ -658,6 +693,11 @@ function uiReceipt(){
   </div>`;
 }
 
+function toggleSalesSpeciesCustom(){
+  var v=document.getElementById('r-f-species').value;
+  var box=document.getElementById('r-f-species-custom-box');
+  if(box) box.style.display=(v==='User Define')?'block':'none';
+}
 function toggleSalesType(val){
   var isArat = val==='Arat';
   var discSection=document.getElementById('r-f-discount-section');
@@ -673,13 +713,15 @@ function calcSalesRow(){
   var isArat=salesType==='Arat';
   var aqty=isArat?0:(+document.getElementById('r-f-aqty').value||0);
   var freePer40=+((document.getElementById('r-f-free-per-40')||{}).value||5);
-  var discQty=isArat?0:Math.floor(aqty/40)*freePer40;
-  var salesQty=isArat?(+document.getElementById('r-f-aqty').value||0):(aqty-discQty);
+  var salesQty=isArat?(+document.getElementById('r-f-aqty').value||0):(aqty>0?(aqty/(40+freePer40))*40:0);
+  var discQty=isArat?0:(aqty-salesQty);
+  salesQty=Math.round(Math.max(0,salesQty)*100)/100;
+  discQty=Math.round(Math.max(0,discQty)*100)/100;
   if(!isArat&&document.getElementById('r-f-dqty')) document.getElementById('r-f-dqty').value=discQty;
-  if(document.getElementById('r-f-sqty')) document.getElementById('r-f-sqty').value=Math.max(0,salesQty);
+  if(document.getElementById('r-f-sqty')) document.getElementById('r-f-sqty').value=salesQty;
   var r=+document.getElementById('r-f-rate').value||0;
   var comm=+document.getElementById('r-f-comm').value||0;
-  var gross=Math.max(0,salesQty)*r;
+  var gross=salesQty*r;
   if(document.getElementById('r-f-amt')) document.getElementById('r-f-amt').value=gross.toFixed(2);
   if(document.getElementById('r-f-total')) document.getElementById('r-f-total').value=Math.max(0,gross-comm).toFixed(2);
 }
@@ -693,10 +735,11 @@ function addSalesLine(type){
     var isArat=salesType==='Arat';
     var aqty=isArat?0:(+document.getElementById('r-f-aqty').value||0);
     var freePer40=+(document.getElementById('r-f-free-per-40').value||5);
-    var discQty=isArat?0:Math.floor(aqty/40)*freePer40;
-    var salesQty=+document.getElementById('r-f-sqty').value||0;
+    var rawSalesQty=isArat?aqty:(aqty>0?(aqty/(40+freePer40))*40:0);
+    var salesQty=Math.round(Math.max(0,rawSalesQty)*100)/100;
+    var discQty=isArat?0:Math.round(Math.max(0,aqty-salesQty)*100)/100;
     item.saleType=isArat?'Arat':'Direct';
-    item.product=document.getElementById('r-f-species').value;
+    item.product=getSpeciesValue('r-f-species','r-f-species-custom');
     item.pond=document.getElementById('r-f-pond').value;
     item.particular=document.getElementById('r-f-part').value;
     item.pcs=+document.getElementById('r-f-pcs').value||0;
@@ -733,16 +776,22 @@ function saveReceiptDraft(){
   var party=document.getElementById('r-party').value.trim();
   if(!AppState.cart.length){showToast('Add at least one item to draft.','var(--amber)');return;}
   var dKey=AppState.project+'_'+Date.now();
+  var voucher=document.getElementById('r-voucher').value;
+  var date=document.getElementById('r-date').value;
+  var mobile=document.getElementById('r-mobile').value;
+  var address=document.getElementById('r-address').value;
+  var reference=document.getElementById('r-ref').value;
+  var salesType=(document.getElementById('r-sales-type')||{}).value||'Direct';
   revDrafts[dKey]={
-    partyName:party,mobile:document.getElementById('r-mobile').value,
-    address:document.getElementById('r-address').value,reference:document.getElementById('r-ref').value,
-    date:document.getElementById('r-date').value,salesType:(document.getElementById('r-sales-type')||{}).value||'Direct',
-    voucher:document.getElementById('r-voucher').value,
+    partyName:party,mobile,address,reference,date,salesType,voucher,
     cart:JSON.parse(JSON.stringify(AppState.cart)),savedAt:new Date().toLocaleString()
   };
+  var base={project:AppState.project,date,partyName:party||'—',mobile,address,reference,voucher,type:'revenue',status:'draft',saleType:salesType};
+  var entries=AppState.cart.map(i=>Object.assign({},base,i));
   AppState.cart=[];
   showToast('Draft saved! You can continue later.','var(--amber)');
   renderActiveView();
+  printSalesInvoice(entries,voucher,'Draft');
 }
 
 function showDraftList(){
@@ -834,6 +883,7 @@ function submitReceipt(action){
   showToast('Revenue booking completed!');
   AppState.cart=[];
   renderActiveView();
+  printSalesInvoice(entries,voucher,'Completed');
 }
 
 function viewLastRevEntry(){
@@ -876,7 +926,8 @@ function switchSalesMode(m){
   document.getElementById('box-sales-fish').style.display=m==='fish'?'block':'none';
   document.getElementById('box-sales-other').style.display=m==='other'?'block':'none';
 }
-function printSalesInvoice(entries,invCode){
+function printSalesInvoice(entries,invCode,docStatus){
+  docStatus=docStatus||(entries[0]&&entries[0].status==='draft'?'Draft':'Completed');
   // Group by saleType — if mixed use first entry type for header
   var isArat=entries[0]&&entries[0].saleType==='Arat';
   var rows='';
@@ -907,7 +958,12 @@ function printSalesInvoice(entries,invCode){
     ?`<tr style="background:#1c4587;color:#fff;"><th style="padding:6px">Fish Species</th><th style="padding:6px;text-align:right">Pcs</th><th style="padding:6px;text-align:right">Sales Qty</th><th style="padding:6px;text-align:right">Rate</th><th style="padding:6px;text-align:right">Amount</th><th style="padding:6px;text-align:right">Commission</th><th style="padding:6px;text-align:right">TL Amount</th></tr>`
     :`<tr style="background:#1c4587;color:#fff;"><th style="padding:6px">Fish Species</th><th style="padding:6px;text-align:right">Pcs</th><th style="padding:6px;text-align:right">Actual Qty</th><th style="padding:6px;text-align:right">Disc.Qty</th><th style="padding:6px;text-align:right">Sales Qty</th><th style="padding:6px;text-align:right">Rate</th><th style="padding:6px;text-align:right">Amount</th><th style="padding:6px;text-align:right">Commission</th><th style="padding:6px;text-align:right">TL Amount</th></tr>`;
   var colspan=isArat?6:8;
-  document.getElementById('print-space').innerHTML=buildPrintHeader('REVENUE INVOICE / SALES RECEIPT')+`
+  document.getElementById('print-space').innerHTML=buildPrintHeader('SALES INVOICE — BACKWARD LINKAGE PROGRAM')+`
+    <div style="text-align:center;margin-bottom:10px;">
+      <span style="display:inline-block;padding:4px 16px;border-radius:14px;font-size:12px;font-weight:700;letter-spacing:0.5px;${docStatus==='Draft'?'background:#fff3cd;color:#a87900;border:1px solid #f0a500;':'background:#e6f4ea;color:#1e7e34;border:1px solid #1e7e34;'}">
+        Document Status: ${docStatus==='Draft'?'📝 DRAFT':'✅ COMPLETED'}
+      </span>
+    </div>
     <div style="border:1.5px solid #1c4587;border-radius:6px;padding:10px;margin-bottom:10px;">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px;">
         <div><b>Invoice No:</b> ${invCode}</div><div><b>Date:</b> ${entries[0].date}</div>
@@ -916,10 +972,11 @@ function printSalesInvoice(entries,invCode){
       </div>
     </div>
     <div style="background:#f0f4f8;border-radius:6px;padding:10px;margin-bottom:10px;font-size:12px;">
-      <b style="display:block;margin-bottom:4px;color:#1c4587;">CUSTOMER DETAILS</b>
+      <b style="display:block;margin-bottom:4px;color:#1c4587;">BUYER INFORMATION</b>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
         <div><b>Name:</b> ${entries[0].partyName}</div><div><b>Mobile:</b> ${entries[0].mobile||'N/A'}</div>
         <div style="grid-column:1/-1"><b>Address:</b> ${entries[0].address||'—'}</div>
+        <div><b>Project Name:</b> ${AppState.project}</div><div><b>Pond/Shed No:</b> ${entries[0].pond||'—'}</div>
       </div>
     </div>
     <table style="width:100%;border-collapse:collapse;font-size:11px;margin-bottom:10px;">
@@ -1047,6 +1104,51 @@ function calcMedStock(){
   (AppState.db.medicine_issues||[]).filter(x=>x.project===AppState.project).forEach(x=>{if(!medStock[x.medType])medStock[x.medType]=0;medStock[x.medType]-=(+x.qty||0);});
   return medStock;
 }
+function calcInventoryValuation(){
+  // Computes remaining (unconsumed) stock value for Feed & Medicine — shown as Current Asset
+  // and the CONSUMED portion of Feed/Medicine cost — used inside Biological Asset valuation
+  var payments=(AppState.db.payments||[]).filter(p=>p.project===AppState.project);
+  var feedIssues=(AppState.db.feed_issues||[]).filter(x=>x.project===AppState.project);
+  var medIssues=(AppState.db.medicine_issues||[]).filter(x=>x.project===AppState.project);
+
+  function buildValuation(purchases, issues, productKey, issueQtyKey, issueProductKey){
+    var byProduct={}; // {product: {qty, amount}}
+    purchases.forEach(p=>{
+      var prod=p[productKey];
+      if(!byProduct[prod])byProduct[prod]={qty:0,amount:0};
+      byProduct[prod].qty+=(+p.qty||0);
+      byProduct[prod].amount+=(+p.netAmount||+p.amount||0);
+    });
+    var issuedQty={};
+    issues.forEach(x=>{
+      var prod=x[issueProductKey];
+      issuedQty[prod]=(issuedQty[prod]||0)+(+x[issueQtyKey]||0);
+    });
+    var remainingValue=0, consumedValue=0, totalPurchased=0;
+    Object.keys(byProduct).forEach(function(prod){
+      var b=byProduct[prod];
+      var avgRate=b.qty>0?(b.amount/b.qty):0;
+      var issued=Math.min(b.qty, issuedQty[prod]||0);
+      var remainingQty=Math.max(0,b.qty-issued);
+      remainingValue+=remainingQty*avgRate;
+      consumedValue+=issued*avgRate;
+      totalPurchased+=b.amount;
+    });
+    return {remainingValue, consumedValue, totalPurchased};
+  }
+
+  var feedVal=buildValuation(payments.filter(p=>p.head==='Feed Cost'), feedIssues, 'product', 'qtyKg', 'feedType');
+  var medVal=buildValuation(payments.filter(p=>p.head==='Medicine Cost'), medIssues, 'product', 'qty', 'medType');
+
+  return {
+    feedRemainingValue: feedVal.remainingValue,
+    feedConsumedValue: feedVal.consumedValue,
+    medRemainingValue: medVal.remainingValue,
+    medConsumedValue: medVal.consumedValue,
+    currentAssetStock: feedVal.remainingValue + medVal.remainingValue,
+    consumedFeedMedCost: feedVal.consumedValue + medVal.consumedValue
+  };
+}
 function getFishStock(){
   var stockMap={};
   SPECIES_LIST.forEach(s=>stockMap[s]={qty:0,weight:0,ponds:{}});
@@ -1171,7 +1273,10 @@ function renderFeedInv(){
     <div class="card-title">🚜 Feed Issue to Pond(s)</div>
     <div class="two-col">
       <div><label class="lbl-f">Issue Date</label><input type="date" id="fi-date" value="${today()}"></div>
-      <div><label class="lbl-f">Feed Type</label><select id="fi-type">${fOpts}</select></div>
+      <div><label class="lbl-f">Feed Type</label><select id="fi-type" onchange="toggleFeedTypeCustom()">${fOpts}</select></div>
+    </div>
+    <div id="fi-type-custom-box" style="display:none;margin-top:6px;">
+      <label class="lbl-f">Custom Feed Type Name</label><input type="text" id="fi-type-custom" placeholder="Enter feed type name">
     </div>
     <hr class="section-divider">
     <p style="font-size:11px;font-weight:700;color:var(--blue);margin-bottom:8px;">✅ Select ponds to issue (tick to include):</p>
@@ -1183,10 +1288,23 @@ function renderFeedInv(){
   </div>`;
 }
 
+function toggleFeedTypeCustom(){
+  var v=document.getElementById('fi-type').value;
+  var box=document.getElementById('fi-type-custom-box');
+  if(box) box.style.display=(v==='User Define')?'block':'none';
+}
+function getFeedTypeValue(){
+  var v=document.getElementById('fi-type').value;
+  if(v==='User Define'){
+    var custom=(document.getElementById('fi-type-custom')||{}).value||'';
+    return custom.trim()||'User Define';
+  }
+  return v;
+}
 function submitMultiFeedIssue(){
   var ponds=AppState.db.ponds.filter(p=>p.project===AppState.project);
   var date=document.getElementById('fi-date').value;
-  var feedType=document.getElementById('fi-type').value;
+  var feedType=getFeedTypeValue();
   var issued=0,count=0;
   ponds.forEach((p,i)=>{
     var chk=document.getElementById('fi-chk-'+i);
@@ -1201,14 +1319,28 @@ function submitMultiFeedIssue(){
     }
   });
   if(!count){alert('Please tick at least one pond and enter quantity.');return;}
-  showToast('Feed issued to '+count+' pond(s) — '+issued+' kg total');
-  renderActiveView();
+  showFeedIssueBookedModal(count,issued,feedType);
+}
+function showFeedIssueBookedModal(count,issued,feedType){
+  var modal=document.createElement('div');
+  modal.id='fi-booked-modal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:center;justify-content:center;';
+  modal.innerHTML=`<div style="background:#fff;border-radius:14px;padding:26px 22px;max-width:380px;width:90%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.22);">
+    <div style="font-size:40px;">✅</div>
+    <h3 style="margin:8px 0 6px;color:#1c4587;font-size:16px;">Your Feed Issue are Booked</h3>
+    <p style="color:#555;font-size:12px;margin-bottom:16px;">${feedType} — ${issued} kg issued to ${count} pond(s)</p>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+      <button onclick="document.getElementById('fi-booked-modal').remove();printMultiFeedIssueNote();" style="background:#1c4587;color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:13px;cursor:pointer;font-weight:600;">🖨️ Print Issue Note</button>
+      <button onclick="document.getElementById('fi-booked-modal').remove();renderActiveView();" style="background:#2e7d32;color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:13px;cursor:pointer;font-weight:600;">✕ Close</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
 }
 
 function printMultiFeedIssueNote(){
   var ponds=AppState.db.ponds.filter(p=>p.project===AppState.project);
   var date=document.getElementById('fi-date').value;
-  var feedType=document.getElementById('fi-type').value;
+  var feedType=getFeedTypeValue();
   var issueLines=[];
   var totalIssued=0;
   ponds.forEach((p,i)=>{
@@ -1613,14 +1745,21 @@ function compileKPIs(){
   </div>`;
 }
 function compileBalance(){
-  var m=getFinancialMetrics();var cash=calcCashMetrics();
-  var bioAsset=m.cogs*1.12;var totalAssets=cash.withoutInterest+bioAsset;var equity=totalAssets-cash.compFund;
+  var m=getFinancialMetrics();var cash=calcCashMetrics();var inv=calcInventoryValuation();
+  // Biological Asset = (Fingerling Cost + consumed Feed/Medicine cost + other direct cost heads, excluding unconsumed stock) @ +12%
+  var fingerlingCost=(AppState.db.payments||[]).filter(p=>p.project===AppState.project&&p.head==='Fingerling Cost').reduce((s,p)=>s+(+p.netAmount||+p.amount||0),0);
+  var otherCOGS=Math.max(0,m.cogs-fingerlingCost-(AppState.db.payments||[]).filter(p=>p.project===AppState.project&&(p.head==='Feed Cost'||p.head==='Medicine Cost')).reduce((s,p)=>s+(+p.netAmount||+p.amount||0),0));
+  var bioBaseCost=fingerlingCost+inv.consumedFeedMedCost+otherCOGS;
+  var bioAsset=bioBaseCost*1.12;
+  var totalAssets=cash.withoutInterest+bioAsset+inv.currentAssetStock;
+  var equity=totalAssets-cash.compFund;
   return`<div class="card" id="printable-report">
     <div class="card-title">⚖️ Balance Sheet</div>
     <b style="font-size:11px;color:var(--blue);display:block;margin-bottom:4px">ASSETS</b>
     <table class="tbl">
       <tr><td>Cash / Working Capital</td><td style="text-align:right">৳${fmt(cash.withoutInterest)}</td></tr>
-      <tr><td>Biological Asset (Fish @ Cost+12%)</td><td style="text-align:right">৳${fmt(bioAsset)}</td></tr>
+      <tr><td>Feed & Medicine Stock (Current Asset)</td><td style="text-align:right">৳${fmt(inv.currentAssetStock)}</td></tr>
+      <tr><td>Biological Asset (Fish @ Consumed Cost+12%)</td><td style="text-align:right">৳${fmt(bioAsset)}</td></tr>
       <tr class="tot-row"><td>Total Assets</td><td style="text-align:right">৳${fmt(totalAssets)}</td></tr>
     </table>
     <b style="font-size:11px;color:var(--blue);display:block;margin:8px 0 4px">LIABILITIES & EQUITY</b>
@@ -1629,6 +1768,7 @@ function compileBalance(){
       <tr><td>Retained Earnings / Equity</td><td style="text-align:right">৳${fmt(equity)}</td></tr>
       <tr class="tot-row"><td>Total Liabilities & Equity</td><td style="text-align:right">৳${fmt(totalAssets)}</td></tr>
     </table>
+    <p style="font-size:10px;color:var(--text2);margin-top:8px;">Note: Feed/Medicine stock not yet issued to ponds is held as Current Asset. Only the consumed (issued) portion is included in the Biological Asset cost base.</p>
   </div>`;
 }
 
@@ -1760,7 +1900,7 @@ function printFooterBtns(){
 // Deployment ID : AKfycbzyx4FYE60sEMtQM9tKqGdeA8kx9MXMKEPd_JxEYkLz1lfFHAyrgJgJj61WJlUVrU-OLQ
 // =========================================================================
 var IFMS_CONFIG = {
-  GAS_URL: 'https://script.google.com/macros/s/AKfycbztiIjaQZQR-oPeQSlzMxP89f72eTI95QL8akabi86nQdY7hXCeuWPgQ9l0klyLwJxP/exec'
+  GAS_URL: 'https://script.google.com/macros/s/AKfycbxMNTthK1mtbvrRV9RbR0S1kt7HaPWTLvys2ArpvS8k7tGIp5YYht3AWWE7g6_LODtVTw/exec'
 };
 
 // POST via no-cors (GAS requires this from external HTML files)
