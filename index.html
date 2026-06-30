@@ -327,15 +327,24 @@ function uiPayment(){
         <div><label class="lbl-f">Particulars (Optional)</label><input type="text" id="p-part" placeholder="Details..."></div>
       </div>
       <div class="three-col">
-        <div><label class="lbl-f">MOU / Unit</label><input type="text" id="p-uom" readonly></div>
-        <div><label class="lbl-f">Quantity</label><input type="number" id="p-qty" value="0" oninput="calcPaymentTotals()"></div>
-        <div><label class="lbl-f">Rate / Unit (Tk)</label><input type="number" id="p-rate" value="0" oninput="calcPaymentTotals()"></div>
+        <div><label class="lbl-f" id="lbl-p-uom">MOU / Unit</label><input type="text" id="p-uom" readonly></div>
+        <div><label class="lbl-f" id="lbl-p-qty">Quantity</label><input type="number" id="p-qty" value="0" oninput="calcPaymentTotals()"></div>
+        <div><label class="lbl-f" id="lbl-p-rate">Rate / Unit (Tk)</label><input type="number" id="p-rate" value="0" oninput="calcPaymentTotals()"></div>
       </div>
       <div id="p-discount-row" class="two-col">
         <div><label class="lbl-f">Discount Value</label><input type="number" id="p-disc" value="0" oninput="calcPaymentTotals()"></div>
         <div><label class="lbl-f">Discount Type</label>
           <select id="p-disc-type" onchange="calcPaymentTotals()"><option value="Tk">Flat Tk</option><option value="Pct">% Percent</option></select>
         </div>
+      </div>
+      <div id="p-lease-period-section" style="display:none;background:#fff3cd;border:1px solid var(--amber);border-radius:6px;padding:8px;margin:6px 0;">
+        <b style="font-size:11px;color:var(--amber);">📅 Lease Period (for monthly expense allocation)</b>
+        <div class="two-col" style="margin-top:4px;">
+          <div><label class="lbl-f">Lease From Date</label><input type="date" id="p-lease-from" oninput="calcLeaseMonths()"></div>
+          <div><label class="lbl-f">Lease To Date</label><input type="date" id="p-lease-to" oninput="calcLeaseMonths()"></div>
+        </div>
+        <div><label class="lbl-f">Months Covered (Auto)</label><input type="number" id="p-lease-months" readonly value="1" style="background:#eceff1;font-weight:700;color:var(--amber)"></div>
+        <p style="font-size:10px;color:var(--text2);margin-top:2px;">The full amount is recorded as a one-time payment on the Transaction Date. In reports, it will be spread evenly across the months in this period.</p>
       </div>
       <div class="two-col">
         <div><label class="lbl-f">Gross Amount (Tk)</label><input type="number" id="p-gross" readonly value="0"></div>
@@ -371,10 +380,33 @@ function onPaymentHeadChange(){
   var lblLoc=document.getElementById('lbl-locator');
   var stdSection=document.getElementById('standard-payment-section');
   var flSection=document.getElementById('fingerling-multi-section');
+  var lblQty=document.getElementById('lbl-p-qty');
+  var lblRate=document.getElementById('lbl-p-rate');
   if(h==='Fingerling Cost'){stdSection.style.display='none';flSection.style.display='block';if(document.getElementById('fingerling-rows-container').children.length===0)addFingerlingRow();return;}
   stdSection.style.display='block';flSection.style.display='none';
   dRow.style.display='grid';lblSup.textContent='Supplier Name';
-  if(h==='Lease Value'){pBox.innerHTML=`<select id="p-prod"><option value="Rent Expense">Rent Expense</option></select>`;uom.value='Each';uom.readOnly=true;dRow.style.display='none';setLocatorExpense(loc,lblLoc);}
+  // Reset labels to default before applying head-specific overrides
+  if(lblQty)lblQty.textContent='Quantity';
+  if(lblRate)lblRate.textContent='Rate / Unit (Tk)';
+  var leaseSection=document.getElementById('p-lease-period-section');
+  if(leaseSection)leaseSection.style.display='none';
+  if(h==='Lease Value'){
+    pBox.innerHTML=`<select id="p-prod"><option value="Rent Expense">Rent Expense</option></select>`;
+    uom.value='Month';uom.readOnly=true;dRow.style.display='none';setLocatorExpense(loc,lblLoc);
+    var qtyEl=document.getElementById('p-qty');if(qtyEl){qtyEl.value=1;}
+    if(lblQty)lblQty.textContent='No. of Months';
+    if(lblRate)lblRate.textContent='Lease Amount per Month (Tk)';
+    if(leaseSection){
+      leaseSection.style.display='block';
+      var fromEl=document.getElementById('p-lease-from');
+      var toEl=document.getElementById('p-lease-to');
+      var txnDate=document.getElementById('p-date').value;
+      if(fromEl&&!fromEl.value)fromEl.value=txnDate;
+      if(toEl&&!toEl.value)toEl.value=txnDate;
+      calcLeaseMonths();
+    }
+    calcPaymentTotals();
+  }
   else if(h==='Feed Cost'){pBox.innerHTML=`<select id="p-prod">${FEED_TYPES.map(f=>`<option value="${f}">${f}</option>`).join('')}</select>`;uom.value='kg';uom.readOnly=true;loc.innerHTML=`<option value="GStore">GStore</option>`;lblLoc.textContent='Inventory Warehouse Locator';}
   else if(h==='Labor Cost'){pBox.innerHTML=`<select id="p-prod" onchange="onLaborProdChange()"><option value="Wages">Wages</option><option value="Salary">Salary</option><option value="Others">Others</option></select>`;uom.value='Each';uom.readOnly=true;dRow.style.display='none';setLocatorExpense(loc,lblLoc);onLaborProdChange();}
   else if(h==='Medicine Cost'){var opts=MED_LIST.map(m=>`<option value="${m}">${m}</option>`).join('');pBox.innerHTML=`<select id="p-prod">${opts}</select>`;uom.value='Pack';uom.readOnly=false;loc.innerHTML=`<option value="GStore">GStore</option>`;lblLoc.textContent='Inventory Warehouse Locator';}
@@ -389,6 +421,24 @@ function setLocatorExpense(loc,lblLoc){
 function onLaborProdChange(){
   var p=document.getElementById('p-prod')?document.getElementById('p-prod').value:'';
   document.getElementById('lbl-supplier-name').textContent=(p==='Salary')?'Employee Name *':'Supplier Name';
+}
+function calcLeaseMonths(){
+  var fromEl=document.getElementById('p-lease-from');
+  var toEl=document.getElementById('p-lease-to');
+  var monthsEl=document.getElementById('p-lease-months');
+  if(!fromEl||!toEl||!monthsEl)return;
+  var from=fromEl.value,to=toEl.value;
+  var months=1;
+  if(from&&to){
+    var d1=new Date(from),d2=new Date(to);
+    months=(d2.getFullYear()-d1.getFullYear())*12+(d2.getMonth()-d1.getMonth())+1;
+    if(months<1)months=1;
+  }
+  monthsEl.value=months;
+  // Keep "No. of Months" Qty field in sync with the lease period span
+  var qtyEl=document.getElementById('p-qty');
+  if(qtyEl&&(document.getElementById('p-head')||{}).value==='Lease Value')qtyEl.value=months;
+  calcPaymentTotals();
 }
 function calcPaymentTotals(){
   var q=+document.getElementById('p-qty').value||0;
@@ -520,16 +570,33 @@ function submitPaymentEntry(){
   if(q<=0||r<=0||!prod){alert('Quantity, Rate and Product are required.');return;}
   var loc=document.getElementById('p-locator').value;
   if(GSTORE_HEADS.indexOf(h)!==-1&&loc!=='GStore'){alert('Feed & Medicine must be GStore.');return;}
+  if(h==='Lease Value'){
+    var lFrom=(document.getElementById('p-lease-from')||{}).value;
+    var lTo=(document.getElementById('p-lease-to')||{}).value;
+    if(!lFrom||!lTo){alert('Lease From Date and To Date are required.');return;}
+    if(lTo<lFrom){alert('Lease To Date must be after Lease From Date.');return;}
+  }
   var voucher=document.getElementById('p-voucher').textContent;
   var net=+document.getElementById('p-net').value;
   var gross=+document.getElementById('p-gross').value;
-  var entry={project:AppState.project,date:document.getElementById('p-date').value,receivedDate:document.getElementById('p-rcvd-date').value,challanNo:document.getElementById('p-challan').value,head:h,product:prod,particular:document.getElementById('p-part').value,uom:document.getElementById('p-uom').value,qty:q,rate:r,amount:gross,discount:+(document.getElementById('p-disc')||{}).value||0,netAmount:net,supplier:sup,mobile:mob,locator:loc,type:'cost',voucher};
+  var paymentDate=document.getElementById('p-date').value;
+  var entry={project:AppState.project,date:paymentDate,receivedDate:document.getElementById('p-rcvd-date').value,challanNo:document.getElementById('p-challan').value,head:h,product:prod,particular:document.getElementById('p-part').value,uom:document.getElementById('p-uom').value,qty:q,rate:r,amount:gross,discount:+(document.getElementById('p-disc')||{}).value||0,netAmount:net,supplier:sup,mobile:mob,locator:loc,type:'cost',voucher,paymentMonth:paymentDate?paymentDate.slice(0,7):''};
+  if(h==='Lease Value'){
+    entry.leaseFrom=(document.getElementById('p-lease-from')||{}).value||'';
+    entry.leaseTo=(document.getElementById('p-lease-to')||{}).value||'';
+    entry.leaseMonths=+(document.getElementById('p-lease-months')||{}).value||1;
+  }
   AppState.db.payments.push(entry);
   appendToSheet('payments', entry);
   showToast('Payment saved successfully!');
   printPaymentVoucher(entry);
 }
 function printPaymentVoucher(e){
+  var leaseBlock=(e.head==='Lease Value'&&e.leaseFrom&&e.leaseTo)?`
+    <div style="background:#fff3cd;border:1px solid #f0a500;border-radius:6px;padding:8px;margin-bottom:10px;font-size:12px;">
+      <b style="color:#a87900;">📅 Lease Period:</b> ${e.leaseFrom} to ${e.leaseTo} (${e.leaseMonths||1} month${(e.leaseMonths||1)>1?'s':''})
+      <br><span style="font-size:10px;color:#777;">Full amount paid this voucher date; expense will be allocated monthly in reports.</span>
+    </div>`:'';
   document.getElementById('print-space').innerHTML=buildPrintHeader('PAYMENT VOUCHER — BACKWARD LINKAGE PROGRAM')+`
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;margin:10px 0;">
       <div><b>Voucher No:</b> ${e.voucher}</div><div><b>Date:</b> ${e.date}</div>
@@ -538,6 +605,7 @@ function printPaymentVoucher(e){
       <div><b>Particulars:</b> ${e.particular||'—'}</div><div><b>Locator:</b> ${e.locator}</div>
       <div><b>Project Name:</b> ${AppState.project}</div><div></div>
     </div>
+    ${leaseBlock}
     <div style="background:#f0f4f8;border-radius:6px;padding:10px;margin-bottom:10px;font-size:12px;">
       <b style="display:block;margin-bottom:4px;color:#1c4587;">SUPPLIER INFORMATION</b>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
@@ -1191,6 +1259,7 @@ function renderFishInv(){
   var ponds=AppState.db.ponds.filter(p=>p.project===AppState.project);
   var pOpts=ponds.map(p=>`<option value="${p.pond}">${p.pond}</option>`).join('');
   var fOpts=SPECIES_LIST.map(s=>`<option value="${s}">${s}</option>`).join('');
+  var fOptsUD=buildSpeciesOptions();
   var stock=getFishStock();
   // Pond-wise biomass table headers
   var pondNames=ponds.map(p=>p.pond);
@@ -1224,7 +1293,10 @@ function renderFishInv(){
     <div class="card-title">🔄 Fish Transfer (Pond to Pond)</div>
     <div class="two-col">
       <div><label class="lbl-f">Transfer Date</label><input type="date" id="mv-date" value="${today()}"></div>
-      <div><label class="lbl-f">Species</label><select id="mv-species">${fOpts}</select></div>
+      <div><label class="lbl-f">Species</label><select id="mv-species" onchange="toggleMvSpeciesCustom()">${fOptsUD}</select></div>
+    </div>
+    <div id="mv-species-custom-box" style="display:none;margin-bottom:6px;">
+      <label class="lbl-f">Custom Species Name</label><input type="text" id="mv-species-custom" placeholder="Enter species name">
     </div>
     <div class="two-col">
       <div><label class="lbl-f">From Pond</label><select id="mv-from">${pOpts}</select></div>
@@ -1241,7 +1313,10 @@ function renderFishInv(){
     <div class="three-col">
       <div><label class="lbl-f">Date</label><input type="date" id="mort-date" value="${today()}"></div>
       <div><label class="lbl-f">Pond</label><select id="mort-pond">${pOpts}</select></div>
-      <div><label class="lbl-f">Species</label><select id="mort-species">${fOpts}</select></div>
+      <div><label class="lbl-f">Species</label><select id="mort-species" onchange="toggleMortSpeciesCustom()">${fOptsUD}</select></div>
+    </div>
+    <div id="mort-species-custom-box" style="display:none;margin-bottom:6px;">
+      <label class="lbl-f">Custom Species Name</label><input type="text" id="mort-species-custom" placeholder="Enter species name">
     </div>
     <div class="two-col">
       <div><label class="lbl-f">Dead Count (Pcs)</label><input type="number" id="mort-qty" value="0"></div>
@@ -1487,13 +1562,23 @@ function printMultiMedIssueNote(){
     ${printFooterBtns()}`;
 }
 
+function toggleMvSpeciesCustom(){
+  var v=document.getElementById('mv-species').value;
+  var box=document.getElementById('mv-species-custom-box');
+  if(box) box.style.display=(v==='User Define')?'block':'none';
+}
+function toggleMortSpeciesCustom(){
+  var v=document.getElementById('mort-species').value;
+  var box=document.getElementById('mort-species-custom-box');
+  if(box) box.style.display=(v==='User Define')?'block':'none';
+}
 function submitMovement(){
-  AppState.db.fish_movement.push({project:AppState.project,date:document.getElementById('mv-date').value,species:document.getElementById('mv-species').value,qty:+document.getElementById('mv-qty').value||0,weight:+document.getElementById('mv-wt').value||0,fromPond:document.getElementById('mv-from').value,toPond:document.getElementById('mv-to').value,type:'movement'});
+  AppState.db.fish_movement.push({project:AppState.project,date:document.getElementById('mv-date').value,species:getSpeciesValue('mv-species','mv-species-custom'),qty:+document.getElementById('mv-qty').value||0,weight:+document.getElementById('mv-wt').value||0,fromPond:document.getElementById('mv-from').value,toPond:document.getElementById('mv-to').value,type:'movement'});
   appendToSheet('fish_movement', AppState.db.fish_movement[AppState.db.fish_movement.length-1]);
   showToast('Transfer recorded!');renderActiveView();
 }
 function submitMortality(){
-  AppState.db.mortality.push({project:AppState.project,date:document.getElementById('mort-date').value,pond:document.getElementById('mort-pond').value,species:document.getElementById('mort-species').value,qty:+document.getElementById('mort-qty').value||0,weight:+document.getElementById('mort-wt').value||0,type:'mortality'});
+  AppState.db.mortality.push({project:AppState.project,date:document.getElementById('mort-date').value,pond:document.getElementById('mort-pond').value,species:getSpeciesValue('mort-species','mort-species-custom'),qty:+document.getElementById('mort-qty').value||0,weight:+document.getElementById('mort-wt').value||0,type:'mortality'});
   appendToSheet('mortality', AppState.db.mortality[AppState.db.mortality.length-1]);
   showToast('Mortality recorded!');renderActiveView();
 }
@@ -1643,6 +1728,33 @@ function compileDashReport(){
   </div>`;
 }
 
+// Computes the portion of a Lease Value payment that falls within [fromDate,toDate] (inclusive),
+// prorating the lump-sum payment evenly across the lease period's months.
+// If no report date range is supplied (fromDate/toDate both empty), the FULL lease amount counts —
+// since "all time" naturally includes every prorated month.
+function getProratedLeaseAmount(p, fromDate, toDate){
+  var total=+p.netAmount||+p.amount||0;
+  if(!p.leaseFrom||!p.leaseTo){
+    // No lease period captured (legacy entry) — fall back to counting it in its payment month only
+    return (!fromDate&&!toDate)?total:( (!fromDate||p.date>=fromDate)&&(!toDate||p.date<=toDate) ? total : 0 );
+  }
+  if(!fromDate&&!toDate)return total; // unscoped report — full amount is fully covered across all its months
+  var months=p.leaseMonths||1;
+  var perMonth=total/months;
+  var startD=new Date(p.leaseFrom);
+  var coveredAmount=0;
+  for(var i=0;i<months;i++){
+    var mD=new Date(startD.getFullYear(),startD.getMonth()+i,1);
+    var mKey=mD.getFullYear()+'-'+String(mD.getMonth()+1).padStart(2,'0');
+    var mStart=mKey+'-01';
+    var mEndDate=new Date(mD.getFullYear(),mD.getMonth()+1,0);
+    var mEnd=mKey+'-'+String(mEndDate.getDate()).padStart(2,'0');
+    // Does this month overlap with the report's [fromDate,toDate] window?
+    var overlaps=(!fromDate||mEnd>=fromDate)&&(!toDate||mStart<=toDate);
+    if(overlaps)coveredAmount+=perMonth;
+  }
+  return coveredAmount;
+}
 function getFinancialMetrics(){
   var scope=AppState.rep_scope,fromDate=AppState.rep_date_from,toDate=AppState.rep_date_to;
   var ponds=AppState.db.ponds.filter(p=>p.project===AppState.project);
@@ -1654,8 +1766,9 @@ function getFinancialMetrics(){
     var val=+r.grandTotal||0;
     if(scope==='all')m.rev+=val;else if(r.pond===scope)m.rev+=val;else if(r.pond==='Overall Project')m.rev+=val*(pondRatioMap[scope]||0);
   });
-  (AppState.db.payments||[]).filter(p=>p.project===AppState.project&&inRange(p.date)).forEach(p=>{
-    var val=+p.netAmount||+p.amount||0;
+  (AppState.db.payments||[]).filter(p=>p.project===AppState.project).forEach(p=>{
+    var val=(p.head==='Lease Value')?getProratedLeaseAmount(p,fromDate,toDate):(inRange(p.date)?(+p.netAmount||+p.amount||0):0);
+    if(val===0)return;
     var isCOGS=['Feed Cost','Fingerling Cost','Medicine Cost'].indexOf(p.head)!==-1;
     var wt=0;
     if(scope==='all')wt=1;else if(p.locator===scope)wt=1;else if(p.locator==='Project'||p.locator==='GStore')wt=(pondRatioMap[scope]||0);
@@ -1900,7 +2013,7 @@ function printFooterBtns(){
 // Deployment ID : AKfycbzyx4FYE60sEMtQM9tKqGdeA8kx9MXMKEPd_JxEYkLz1lfFHAyrgJgJj61WJlUVrU-OLQ
 // =========================================================================
 var IFMS_CONFIG = {
-  GAS_URL: 'https://script.google.com/macros/s/AKfycbxMNTthK1mtbvrRV9RbR0S1kt7HaPWTLvys2ArpvS8k7tGIp5YYht3AWWE7g6_LODtVTw/exec'
+  GAS_URL: 'https://script.google.com/macros/s/AKfycbztiIjaQZQR-oPeQSlzMxP89f72eTI95QL8akabi86nQdY7hXCeuWPgQ9l0klyLwJxP/exec'
 };
 
 // POST via no-cors (GAS requires this from external HTML files)
@@ -1980,7 +2093,7 @@ async function loadFromSheet(project) {
 }
 
 function sheetRowToPayment(r) {
-  return { project:r['Project'], date:r['Date'], receivedDate:r['Received Date'], challanNo:r['Challan No'], head:r['Cost Head'], product:r['Product'], particular:r['Particulars'], uom:r['UOM'], qty:+r['Qty']||0, rate:+r['Rate']||0, amount:+r['Gross Amount']||0, discount:+r['Discount']||0, netAmount:+r['Net Amount']||0, supplier:r['Supplier'], mobile:r['Mobile'], locator:r['Locator'], type:r['Type'], voucher:r['Voucher'] };
+  return { project:r['Project'], date:r['Date'], receivedDate:r['Received Date'], challanNo:r['Challan No'], head:r['Cost Head'], product:r['Product'], particular:r['Particulars'], uom:r['UOM'], qtyPcs:+r['Qty (Pcs)']||0, qty:+r['Qty (Kg)']||0, rate:+r['Rate per Kg']||0, amount:+r['Gross Amount']||0, discount:+r['Discount']||0, netAmount:+r['Net Amount']||0, supplier:r['Supplier'], mobile:r['Mobile'], locator:r['Locator'], type:r['Type'], voucher:r['Voucher'], paymentMonth:r['Payment Month']||'', leaseFrom:r['Lease From']||'', leaseTo:r['Lease To']||'', leaseMonths:+r['Lease Months']||0 };
 }
 function sheetRowToReceipt(r) {
   return { project:r['Project'], date:r['Date'], partyName:r['Party Name'], mobile:r['Mobile'], address:r['Address'], reference:r['Reference'], saleType:r['Sale Type'], product:r['Product'], pond:r['Pond'], pcs:+r['Pcs']||0, actualQty:+r['Actual Qty (Kg)']||0, discountQty:+r['Discount Qty']||0, salesQty:+r['Sales Qty (Kg)']||0, rate:+r['Rate']||0, commission:+r['Commission']||0, amount:+r['Amount']||0, grandTotal:+r['Grand Total']||0, type:r['Type'], status:r['Status'], voucher:r['Voucher'] };
